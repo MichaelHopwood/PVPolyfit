@@ -8,7 +8,7 @@ setup(
   author = 'Michael Hopwood',
   author_email = 'mwhopwood@gmail.com',
   url = 'https://github.com/MichaelHopwood/PVPolyfit',
-  download_url = 'https://github.com/MichaelHopwood/PVPolyfit/archive/v_01.tar.gz',
+  download_url = 'https://github.com/MichaelHopwood/PVPolyfit/archive/v_02.tar.gz',
   keywords = ['Multiple linear regression', 'Multiple linear', 'PV', 'Photovoltaic', 'solar'],
   install_requires=[
           'numpy',
@@ -16,6 +16,7 @@ setup(
           'datetime',
           'pandas',
           'sklearn',
+          'pvlib',
       ],
   classifiers=[
     'Development Status :: 3 - Alpha',
