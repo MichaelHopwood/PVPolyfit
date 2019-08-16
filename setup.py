@@ -2,13 +2,13 @@ from distutils.core import setup
 setup(
   name = 'PVPolyfit',
   packages = ['PVPolyfit'],
-  version = '0.3',
+  version = '0.4',
   license='MIT',
   description = 'A high-resolution multiple linear regression algorithm used to analyze PV output with a few inputs',
   author = 'Michael Hopwood',
   author_email = 'mwhopwood@gmail.com',
   url = 'https://github.com/MichaelHopwood/PVPolyfit',
-  download_url = 'https://github.com/MichaelHopwood/PVPolyfit/archive/v_03.tar.gz',
+  download_url = 'https://github.com/MichaelHopwood/PVPolyfit/archive/v_04.tar.gz',
   keywords = ['Multiple linear regression', 'Multiple linear', 'PV', 'Photovoltaic', 'solar'],
   install_requires=[
           'numpy',

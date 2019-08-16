@@ -88,8 +88,8 @@ from PVPolyfit.core import pvpolyfit
 import pandas as pd
 
 '''# 2. Import data'''
-train_df = pd.read_csv('example//example_data//train_df.csv', index_col = 'datetime')
-test_df = pd.read_csv('example//example_data//test_df.csv', index_col = 'datetime')
+train_df = pd.read_csv('example_data//train_df.csv', index_col = 'datetime')
+test_df = pd.read_csv('example_data//test_df.csv', index_col = 'datetime')
 
 '''# 3. Define input variables'''
 Y_tag = 'Pmpp'
