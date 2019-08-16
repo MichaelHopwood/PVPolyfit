@@ -17,12 +17,14 @@ from PVPolyfit import utilities
 
 class Model:
 
-    def __init__(self, X1, X2, Y, degree):
+    def __init__(self, inputs, Y, degree, kernel_type):
 
-        self.X1 = X1
-        self.X2 = X2
+        self.inputs = inputs
         self.Y = Y
         self.degree = degree
+
+        # possibilities: 'polynomial', 'polynomial with log(POA)', 'diode inspired'
+        self.kernel_type = kernel_type
 
         self.a_hat = []
         self.powers = []
@@ -31,58 +33,166 @@ class Model:
         """
         Least-squares implementation on multiple covariates
         """
-        xs = vstack((self.X1,self.X2)).T
-        num_inputs, len_input = xs.shape[1], xs.shape[0]
-        # add column of rows in first index of matrix
-        xs = hstack((ones((len_input, 1), dtype=float), xs))
 
-        # construct identity matrix
-        iden_matrix = []
-        for i in range(num_inputs+1):
-            # create array of zeros
-            row = zeros(num_inputs+1, dtype=int)
-            # add 1 to diagonal index
-            row[i] = 1
-            iden_matrix.append(row)
+        if self.kernel_type == 0:
+            # polynomial
 
-        # gather list
-        combinations = itertools.combinations_with_replacement(iden_matrix, self.degree)
-        # list of polynomial powers
-        poly_powers = []
-        for i in combinations:
-            sum_arr = np.zeros(num_inputs+1, dtype=int)
-            for j in i:
-                sum_arr += array(j)
-            poly_powers.append(sum_arr)
+            xs = vstack(self.inputs).T
+            num_inputs, len_input = xs.shape[1], xs.shape[0]
+            # add column of rows in first index of matrix
+            xs = hstack((ones((len_input, 1), dtype=float), xs))
 
-        # Raise data to specified degree pattern and stack
-        A = []
-        for power in poly_powers:
-            product = (xs**power).prod(1)
-            A.append(product.reshape(product.shape + (1,)))
-        A = hstack(array(A))
+            # construct identity matrix
+            iden_matrix = []
+            for i in range(num_inputs+1):
+                # create array of zeros
+                row = zeros(num_inputs+1, dtype=int)
+                # add 1 to diagonal index
+                row[i] = 1
+                iden_matrix.append(row)
 
-        # get solution with smallest error via least-squares
-        # returns coefficients of polynomial
-        a_hat = linalg.lstsq(A, self.Y, rcond=-1)[0]
+            # gather list
+            combinations = itertools.combinations_with_replacement(iden_matrix, self.degree)
+            # list of polynomial powers
+            poly_powers = []
+            for i in combinations:
+                sum_arr = np.zeros(num_inputs+1, dtype=int)
+                for j in i:
+                    sum_arr += array(j)
+                poly_powers.append(sum_arr)
 
-        # check if valid lengths
-        if len(a_hat) == 0 or len(poly_powers) == 0:
-            raise Exception("PVPolyfit algorithm returned list of length zero for either coeff. or powers")
+            # Raise data to specified degree pattern and stack
+            A = []
+            for power in poly_powers:
+                product = (xs**power).prod(1)
+                A.append(product.reshape(product.shape + (1,)))
+            A = hstack(array(A))
 
-        # save resolved coefficients 
-        self.a_hat = a_hat
-        # save polynomial powers
-        self.powers = poly_powers
+            # get solution with smallest error via least-squares
+            # returns coefficients of polynomial
+            a_hat = linalg.lstsq(A, self.Y, rcond=-1)[0]
 
-    def output(self, x1_i, x2_i):
+            # check if valid lengths
+            if len(a_hat) == 0 or len(poly_powers) == 0:
+                raise Exception("PVPolyfit algorithm returned list of length zero for either coeff. or powers")
+
+            # save resolved coefficients 
+            self.a_hat = a_hat
+            # save polynomial powers
+            self.powers = poly_powers
+
+        if self.kernel_type == 1:
+            # polynomial with included log(POA) parameter
+            # Requires POA be first input in xs
+
+            xs = vstack(self.inputs).T
+            num_inputs, len_input = xs.shape[1], xs.shape[0]
+            # add column of rows in first index of matrix
+            xs = hstack((ones((len_input, 1), dtype=float), xs, vstack(np.log(self.inputs[0]))))
+
+            # construct identity matrix
+            iden_matrix = []
+            for i in range(num_inputs+1+1):
+                # create array of zeros
+                row = zeros(num_inputs+1+1, dtype=int)
+                # add 1 to diagonal index
+                row[i] = 1
+                iden_matrix.append(row)
+
+            # gather list
+            combinations = itertools.combinations_with_replacement(iden_matrix, self.degree)
+            # list of polynomial powers
+            poly_powers = []
+            for i in combinations:
+                sum_arr = np.zeros(num_inputs+1+1, dtype=int)
+                for j in i:
+                    sum_arr += array(j)
+                poly_powers.append(sum_arr)
+
+            # Raise data to specified degree pattern and stack
+            A = []
+            for power in poly_powers:
+                product = (xs**power).prod(1)
+                A.append(product.reshape(product.shape + (1,)))
+            A = hstack(array(A))
+
+            # get solution with smallest error via least-squares
+            # returns coefficients of polynomial
+            a_hat = linalg.lstsq(A, self.Y, rcond=-1)[0]
+
+            # check if valid lengths
+            if len(a_hat) == 0 or len(poly_powers) == 0:
+                raise Exception("PVPolyfit algorithm returned list of length zero for either coeff. or powers")
+
+            # save resolved coefficients 
+            self.a_hat = a_hat
+            # save polynomial powers
+            self.powers = poly_powers
+
+
+        if self.kernel_type == 2:
+            # Diode Inspired
+            # Requires that xs inputs be [POA, Temp], in that order
+
+            xs = vstack(self.inputs).T
+            num_inputs, len_input = xs.shape[1], xs.shape[0]
+            # add column of rows in first index of matrix
+            xs = hstack((ones((len_input, 1), dtype=float), xs, np.log(xs)))
+
+            # construct identity matrix
+            iden_matrix = []
+            for i in range(num_inputs+1+num_inputs):
+                # create array of zeros
+                row = zeros(num_inputs+1+num_inputs, dtype=int)
+                # add 1 to diagonal index
+                row[i] = 1
+                iden_matrix.append(row)
+
+            A = xs
+            # get solution with smallest error via least-squares
+            # returns coefficients of polynomial
+            self.a_hat = linalg.lstsq(A, self.Y, rcond=-1)[0]
+            self.powers = []
+
+    def output(self, temps):
         ''' Evaluate output with input parameters
-            and polynomial information '''
+            and polynomial information 
+            
+            temps: temporary inputs
+            
+        '''
 
-        fit = 0
-        for b, z in zip(self.a_hat, self.powers):
-            z1, z2, z3 = z
-            fit += b * ( 1**z1 * x1_i**z2 * x2_i**z3 )
+        if self.kernel_type == 0:
+            #polynomial
+            fit = 0
+            for b, z in zip(self.a_hat, self.powers):
+                iter = b
+                for k in range(1, len(z)):
+                    iter *= temps[k-1]**z[k]
+                fit += iter
+
+        if self.kernel_type == 1:
+            #polynomial with included log(POA) parameter
+            # requires POA be first input in xs
+            
+            temps.append(np.log(temps[0]))
+            
+            fit = 0
+            for b, z in zip(self.a_hat, self.powers):
+                iter = b
+                for k in range(1, len(z)):
+                    iter *= temps[k-1]**z[k]
+                fit += iter            
+    
+        if self.kernel_type == 2:
+            # diode inspired
+            # requires [POA, Temp] as inputs, in that order
+
+            x1_i, x2_i = temps
+            b1, b2, b3, b4, b5 = self.a_hat
+            fit = b1 + b2*x1_i + b3*x2_i + b4*np.log(x1_i) + b5*np.log(x2_i)            
+
+
         return fit
 
     def info(self):
@@ -146,12 +256,15 @@ def process_test_data_through_models(test_kmeans_dfs, kmeans_saved_models, test_
         if len(test_kmeans_dfs[i]) == 0:
             raise Exception("DataFrame of zero length has been detected")
         
-        test_POA = array(test_kmeans_dfs[i][xs[0]].tolist())
-        test_Temp = array(test_kmeans_dfs[i][xs[1]].tolist())
+        temps = []
+        for j in range(len(xs)):
+            temps.append(array(test_kmeans_dfs[i][xs[j]].tolist()))
+
         model_index = test_km_labels[i]
         Y_list = []
-        for j in range(len(test_Temp)):
-            Y_val = (kmeans_saved_models[model_index]).output(test_POA[j], test_Temp[j])
+        for j in range(len(temps[0])):
+            inputs_iter = [item[j] for item in temps]
+            Y_val = (kmeans_saved_models[model_index]).output(inputs_iter)
             Y_list.append(Y_val)
 
         kmeans_Y_lists.append(Y_list)

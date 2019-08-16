@@ -91,18 +91,18 @@ def classify_weather_day_GM_Tina(df, clearsky_ghi_tag, meas_ghi_tag):
 
     return classification, k, MF
 
-def data_preprocessing(df, xs, Y_tag, I_tag, Y_high_filter):
+def data_preprocessing(df, xs, Y_tag, I_tag, cs_tag, Y_high_filter, print_info):
 
     # data processing
     df.dropna(inplace = True)
 
     df = df[df[xs[0]] > 20]
     # drop where ghi_clearsky is equal to 0 because we will be dividing by that later
-    df = df[df['clearsky_ghi'] != 0]
+    df = df[df[cs_tag] != 0]
     df = df[df[Y_tag] > 0]
 
     df = df[df[Y_tag] < Y_high_filter]
-    
+
     # irradiance and temperature sensor verification
     # find all points outside of 3 sigma of Isc / Irradiance
     # replacing Isc with DC Current because no IV trace at inverter level
@@ -118,8 +118,9 @@ def data_preprocessing(df, xs, Y_tag, I_tag, Y_high_filter):
     df = df[df['outlier_bool'] == False]
     df.drop(columns = ['outlier_bool'])
 
-    new_num_rows = len(df.index)
-    print("Dropped {} of {} rows with I/Irr filter.".format((old_num_rows - new_num_rows), old_num_rows))
+    if print_info:
+        new_num_rows = len(df.index)
+        print("Dropped {} of {} rows with I/Irr filter.".format((old_num_rows - new_num_rows), old_num_rows))
 
     return df
 

@@ -11,6 +11,8 @@ The PVPolyfit algorithm is:
 
 * `ROBUST` - working on a vast variety of datasets and levels - module, string, inverter
 
+* `MALLEABLE` - allowing any number of inputs
+
 * `ACCURATE` - generating one percent error or less
 
 * `USER FRIENDLY` - requiring only one line of code
@@ -27,10 +29,12 @@ Simply, call the following function located in PVPolyit.core
 
 ```py
 >>> from PVPolyfit.core import pvpolyfit
->>> pvpolyfit(train_df, test_df, Y_tag, xs, I_tag, ghi_tag, cs_tag, 
-	      highest_num_clusters, highest_degree, Y_high_filter, min_count_per_day, 
-              plot_graph = True, graph_type = 'regression', print_info = False)
+>>> modelled_Y, days_rmses = pvpolyfit(train_df, test_df, Y_tag, xs, I_tag, ghi_tag, cs_tag, 
+	      highest_num_clusters, highest_degree, kernel_type, Y_high_filter, min_count_per_day, 
+              plot_graph = True, graph_type = 'regression', print_info = True)
 ```
+
+Reference `Examples/example.py` for a demonstration and explanation on a small amount of provided data.
 
 ### Performance
 

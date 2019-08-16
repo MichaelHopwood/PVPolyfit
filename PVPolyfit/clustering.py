@@ -3,7 +3,7 @@ from PVPolyfit import kernel
 from numpy import linalg, zeros, ones, hstack, asarray, vstack, array, mean, std
 import pandas as pd
 
-def cluster_ordered_pairs_and_return_df_of_days_in_cluster(cut_results, test_cut_results, ordered_pair_list, test_ordered_pair_list, kmeans_num_clusters = 4):
+def cluster_ordered_pairs_and_return_df_of_days_in_cluster(cut_results, test_cut_results, ordered_pair_list, test_ordered_pair_list, kmeans_num_clusters = 4, print_info = False):
     ''' KNN Clustering Algorithm - to find the same types of days'''
     from sklearn.cluster import KMeans
 
@@ -39,7 +39,8 @@ def cluster_ordered_pairs_and_return_df_of_days_in_cluster(cut_results, test_cut
         train_model_day_count[train_km_labels[i]] += 1
         train_kmeans_dfs[train_km_labels[i]] = pd.concat([train_kmeans_dfs[train_km_labels[i]], cut_results[i]])
 
-    print("[TRAIN]: NUM DAYS PER MODEL", train_model_day_count)
+    if print_info:
+        print("[TRAIN]: NUM DAYS PER MODEL", train_model_day_count)
 
     test_kmeans_dfs = [pd.DataFrame() for i in range(kmeans_num_clusters)]
     test_model_day_count = [0] * kmeans_num_clusters
@@ -47,12 +48,13 @@ def cluster_ordered_pairs_and_return_df_of_days_in_cluster(cut_results, test_cut
         test_model_day_count[test_km_labels[i]] += 1
         test_kmeans_dfs[test_km_labels[i]] = pd.concat([test_kmeans_dfs[test_km_labels[i]], test_cut_results[i]])
 
-    print("[TEST]: NUM DAYS PER MODEL", test_model_day_count)
+    if print_info:
+        print("[TEST]: NUM DAYS PER MODEL", test_model_day_count)
     #print("LENGTH list of dfs: ", len(test_kmeans_dfs), len(test_km_labels))
 
     return train_kmeans_dfs, test_kmeans_dfs, test_km_labels, cut_results, test_cut_results, train_model_day_count, test_model_day_count
 
-def save_model_for_each_cluster(kmeans_dfs, degree, Y_tag, xs):
+def save_model_for_each_cluster(kmeans_dfs, degree, Y_tag, xs, kernel_type):
     # each df corresponds to each model
 
     # save a model for each cluster of days
@@ -65,11 +67,15 @@ def save_model_for_each_cluster(kmeans_dfs, degree, Y_tag, xs):
             saved_models.append(0)
             continue
 
-        X1 = array(kmeans_dfs[i][xs[0]].tolist())
-        X2 = array(kmeans_dfs[i][xs[1]].tolist())
         Y = array(kmeans_dfs[i][Y_tag].tolist())
-        
-        model = kernel.Model(X1, X2, Y, degree)
+
+        tup_list = []
+        for j in range(len(xs)):
+            tup_list.append(array(kmeans_dfs[i][xs[j]].tolist()))
+
+        tup = tuple(tup_list)
+
+        model = kernel.Model(tup, Y, degree, kernel_type)
         
         model.build()
 

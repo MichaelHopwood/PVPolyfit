@@ -12,7 +12,7 @@ import warnings
 import time
 warnings.filterwarnings("ignore")
 
-def find_and_break_days_or_hours(df, filter_bool, min_count_per_day = 8, frequency = 'days'):
+def find_and_break_days_or_hours(df, filter_bool, min_count_per_day = 8, frequency = 'days', print_info = False):
     index_list = []
     day_hour_list = []
     prev = 0
@@ -65,7 +65,8 @@ def find_and_break_days_or_hours(df, filter_bool, min_count_per_day = 8, frequen
             df = pd.concat(cut_results)
     
         else:
-            print("No need to alter df because no dropped days detected")
+            if print_info:
+                print("No need to alter df because no dropped days detected")
 
     return index_list, day_hour_list, cut_results, df
 
