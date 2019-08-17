@@ -34,7 +34,7 @@ Simply, call the following function located in PVPolyit.core
               plot_graph = True, graph_type = 'regression', print_info = True)
 ```
 
-Reference `Examples/example.py` for a demonstration and explanation on a small amount of provided data.
+Reference `example/example.py` for a demonstration and explanation on a small amount of provided data.
 
 ### Performance
 
