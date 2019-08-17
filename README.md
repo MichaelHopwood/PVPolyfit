@@ -11,7 +11,7 @@ The PVPolyfit algorithm is:
 
 * `ROBUST` - working on a vast variety of datasets and levels - module, string, inverter
 
-* `MALLEABLE` - allowing any number of inputs
+* `MALLEABLE` - allowing any number of covariates
 
 * `ACCURATE` - generating one percent error or less
 
