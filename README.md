@@ -1,4 +1,5 @@
-﻿# PVPolyfit
+[![PyPI version](https://badge.fury.io/py/PVPolyfit.svg)](https://badge.fury.io/for/py/PVPolyfit)
+# PVPolyfit
 
 A one-lined function call for a high-resolution regression on PV Output
 
