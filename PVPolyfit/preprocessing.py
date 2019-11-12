@@ -91,14 +91,15 @@ def classify_weather_day_GM_Tina(df, clearsky_ghi_tag, meas_ghi_tag):
 
     return classification, k, MF
 
-def data_preprocessing(df, xs, Y_tag, I_tag, cs_tag, Y_high_filter, print_info):
+
+def data_preprocessing(df, xs, Y_tag, I_tag, cs_tag, Y_high_filter, print_info, include_preprocess):
 
     # data processing
     df.dropna(inplace = True)
 
-    df = df[df[xs[0]] > 20]
+    #df = df[df[xs[0]] > 20]
     # drop where ghi_clearsky is equal to 0 because we will be dividing by that later
-    df = df[df[cs_tag] != 0]
+
     df = df[df[Y_tag] > 0]
 
     df = df[df[Y_tag] < Y_high_filter]
@@ -106,28 +107,34 @@ def data_preprocessing(df, xs, Y_tag, I_tag, cs_tag, Y_high_filter, print_info):
     # irradiance and temperature sensor verification
     # find all points outside of 3 sigma of Isc / Irradiance
     # replacing Isc with DC Current because no IV trace at inverter level
-    # OUTLIER REMOVAL
-    old_num_rows = len(df.index)
-    I_vs_Irr = array(df[I_tag].tolist()) / array(df[xs[0]].tolist())
-    avg = mean(I_vs_Irr, axis = 0)
-    sd = std(I_vs_Irr, axis = 0)
-    sigmas = 3
-    outliers = [(True if ((x < avg - sigmas * sd) or (x > avg + sigmas * sd)) else False) for x in I_vs_Irr]
 
-    df['outlier_bool'] = outliers
-    df = df[df['outlier_bool'] == False]
-    df.drop(columns = ['outlier_bool'])
+    if include_preprocess:
+        if len(cs_tag) != 0:
+            df = df[df[cs_tag] != 0]
+    #if True:
+        # OUTLIER REMOVAL
+        old_num_rows = len(df.index)
+        I_vs_Irr = array(df[I_tag].tolist()) / array(df[xs[0]].tolist())
+        avg = mean(I_vs_Irr, axis = 0)
+        sd = std(I_vs_Irr, axis = 0)
+        sigmas = 3
+        outliers = [(True if ((x < avg - sigmas * sd) or (x > avg + sigmas * sd)) else False) for x in I_vs_Irr]
 
-    if print_info:
-        new_num_rows = len(df.index)
-        print("Dropped {} of {} rows with I/Irr filter.".format((old_num_rows - new_num_rows), old_num_rows))
+        df['outlier_bool'] = outliers
+        df = df[df['outlier_bool'] == False]
+        df.drop(columns = ['outlier_bool'])
+
+        if print_info:
+            new_num_rows = len(df.index)
+            print("Dropped {} of {} rows with I/Irr filter.".format((old_num_rows - new_num_rows), old_num_rows))
 
     return df
 
 def add_ghi_to_df(df, start, end, freq, dropped_days, xs, ghi_tag, cs_tag, type_ = None):
     if type_ == 'NIST':
         # multiply GHI by 10^3 because it is in milli
-        df[ghi_tag] = df[ghi_tag].apply(lambda x: x * 10**2)
+        if len(ghi_tag) != 0:
+            df[ghi_tag] = df[ghi_tag].apply(lambda x: x * 10**2)
 
     #TODO: Classify and group days/or/hours (check regression_notes.txt on Desktop)
     if type_ == '8157UCF' or 'PVLifetime' or 'VCAD':
@@ -145,15 +152,20 @@ def add_ghi_to_df(df, start, end, freq, dropped_days, xs, ghi_tag, cs_tag, type_
     cs = cs[cs['ghi'] > 20]
     cs = cs.iloc[1:]
     cs_ghi = pd.DataFrame()
-    cs_ghi[cs_tag] = cs['ghi']
+
+    if len(cs_tag) != 0:
+        cs_ghi[cs_tag] = cs['ghi']
 
     cs_ghi.index = pd.to_datetime(cs.index, format = '%m/%d/%Y %I:%M:%S %p').strftime('%m/%d/%Y %I:%M:%S %p')
 
     cs = pd.merge(df, cs_ghi, how='inner', left_index = True, right_index = True)
     df = cs
 
-    if str(type(df.index[0])) != "<class 'str'>":
-        df_index = [i.strftime('%m/%d/%Y %I:%M:%S %p') for i in df.index]
-        df.index = df_index
+    print(df.index)
+
+    if len(df.index)!= 0:
+        if str(type(df.index[0])) != "<class 'str'>":
+            df_index = [i.strftime('%m/%d/%Y %I:%M:%S %p') for i in df.index]
+            df.index = df_index
 
     return df

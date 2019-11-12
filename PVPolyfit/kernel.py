@@ -33,11 +33,11 @@ class Model:
         """
         Least-squares implementation on multiple covariates
         """
-
         if self.kernel_type == 0:
             # polynomial
 
             xs = vstack(self.inputs).T
+
             num_inputs, len_input = xs.shape[1], xs.shape[0]
             # add column of rows in first index of matrix
             xs = hstack((ones((len_input, 1), dtype=float), xs))
@@ -53,6 +53,7 @@ class Model:
 
             # gather list
             combinations = itertools.combinations_with_replacement(iden_matrix, self.degree)
+
             # list of polynomial powers
             poly_powers = []
             for i in combinations:
@@ -73,10 +74,10 @@ class Model:
             a_hat = linalg.lstsq(A, self.Y, rcond=-1)[0]
 
             # check if valid lengths
-            if len(a_hat) == 0 or len(poly_powers) == 0:
-                raise Exception("PVPolyfit algorithm returned list of length zero for either coeff. or powers")
+            #if len(a_hat) == 0 or len(poly_powers) == 0:
+            #    raise Exception("PVPolyfit algorithm returned list of length zero for either coeff. or powers")
 
-            # save resolved coefficients 
+            # save resolved coefficients
             self.a_hat = a_hat
             # save polynomial powers
             self.powers = poly_powers
@@ -89,25 +90,34 @@ class Model:
             num_inputs, len_input = xs.shape[1], xs.shape[0]
             # add column of rows in first index of matrix
             xs = hstack((ones((len_input, 1), dtype=float), xs, vstack(np.log(self.inputs[0]))))
-
+            #xs = hstack((ones((len_input, 1), dtype=float), xs, np.log(xs)))
             # construct identity matrix
             iden_matrix = []
+
             for i in range(num_inputs+1+1):
+            #for i in range(num_inputs+1+num_inputs):
                 # create array of zeros
                 row = zeros(num_inputs+1+1, dtype=int)
+                #row = zeros(num_inputs+1+num_inputs, dtype=int)
                 # add 1 to diagonal index
                 row[i] = 1
                 iden_matrix.append(row)
 
             # gather list
             combinations = itertools.combinations_with_replacement(iden_matrix, self.degree)
+
             # list of polynomial powers
             poly_powers = []
             for i in combinations:
+
                 sum_arr = np.zeros(num_inputs+1+1, dtype=int)
+                #sum_arr = np.zeros(num_inputs+1+num_inputs, dtype=int)
                 for j in i:
                     sum_arr += array(j)
                 poly_powers.append(sum_arr)
+
+            #print(poly_powers)
+            #print(len(poly_powers))
 
             # Raise data to specified degree pattern and stack
             A = []
@@ -121,10 +131,10 @@ class Model:
             a_hat = linalg.lstsq(A, self.Y, rcond=-1)[0]
 
             # check if valid lengths
-            if len(a_hat) == 0 or len(poly_powers) == 0:
-                raise Exception("PVPolyfit algorithm returned list of length zero for either coeff. or powers")
+            #if len(a_hat) == 0 or len(poly_powers) == 0:
+            #    raise Exception("PVPolyfit algorithm returned list of length zero for either coeff. or powers")
 
-            # save resolved coefficients 
+            # save resolved coefficients
             self.a_hat = a_hat
             # save polynomial powers
             self.powers = poly_powers
@@ -156,10 +166,10 @@ class Model:
 
     def output(self, temps):
         ''' Evaluate output with input parameters
-            and polynomial information 
-            
+            and polynomial information
+
             temps: temporary inputs
-            
+
         '''
 
         if self.kernel_type == 0:
@@ -174,23 +184,28 @@ class Model:
         if self.kernel_type == 1:
             #polynomial with included log(POA) parameter
             # requires POA be first input in xs
-            
+
             temps.append(np.log(temps[0]))
-            
+
+            #lis=[]
+            #for i in temps:
+            #    lis.append(np.log(i))
+            #temps += lis
+
             fit = 0
             for b, z in zip(self.a_hat, self.powers):
                 iter = b
                 for k in range(1, len(z)):
                     iter *= temps[k-1]**z[k]
-                fit += iter            
-    
+                fit += iter
+
         if self.kernel_type == 2:
             # diode inspired
             # requires [POA, Temp] as inputs, in that order
 
             x1_i, x2_i = temps
             b1, b2, b3, b4, b5 = self.a_hat
-            fit = b1 + b2*x1_i + b3*x2_i + b4*np.log(x1_i) + b5*np.log(x2_i)            
+            fit = b1 + b2*x1_i + b3*x2_i + b4*np.log(x1_i) + b5*np.log(x2_i)
 
 
         return fit
@@ -223,10 +238,11 @@ def process_test_data_through_models(test_kmeans_dfs, kmeans_saved_models, test_
     # When inputted, test_kmeans_dfs is ordered by the number of kmeans clusters
     # This will then be transitioned to be ordered by day
     # Then, it will be pushed through the models
-    
+
     new_dfs = []
     for i in range(len(test_kmeans_dfs)):
         # Check for error case
+        #print(kmeans_saved_models[i], test_kmeans_dfs[i])
         if kmeans_saved_models[i] == 0 and len(test_kmeans_dfs[i] != 0):
             raise Exception("Input Error: PVPolyfit requires either less clusters or more training data.")
 
@@ -255,7 +271,7 @@ def process_test_data_through_models(test_kmeans_dfs, kmeans_saved_models, test_
         # if model does not have any days
         if len(test_kmeans_dfs[i]) == 0:
             raise Exception("DataFrame of zero length has been detected")
-        
+
         temps = []
         for j in range(len(xs)):
             temps.append(array(test_kmeans_dfs[i][xs[j]].tolist()))

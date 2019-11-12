@@ -16,8 +16,11 @@ def find_and_break_days_or_hours(df, filter_bool, min_count_per_day = 8, frequen
     index_list = []
     day_hour_list = []
     prev = 0
-
     for index, j in enumerate(df.index):
+        if str(type(j)) != "<class 'str'>":
+            print(type(j))
+            print(j)
+            print(df.loc[j])
         if frequency == 'days':
             curr = int(datetime.strptime(j, '%m/%d/%Y %H:%M:%S %p').strftime('%d'))
             frq = datetime.strptime(j, '%m/%d/%Y %H:%M:%S %p').strftime('%m/%d/%Y')
@@ -63,19 +66,19 @@ def find_and_break_days_or_hours(df, filter_bool, min_count_per_day = 8, frequen
 
         if len(dropped_days) > 0:
             df = pd.concat(cut_results)
-    
+
         else:
             if print_info:
                 print("No need to alter df because no dropped days detected")
 
     return index_list, day_hour_list, cut_results, df
 
-def get_weighted_middle_of_day_and_calculate_float_since_noon(cut_results, ghi_tag, cs_tag):
+def get_weighted_middle_of_day_and_calculate_float_since_noon(cut_results, Y_tag):
     middles = []
     middles_dates = []
     cur_diff_integral = 999999
     for i in range(len(cut_results)):
-        day_diff = array(cut_results[i][cs_tag].tolist()) - array(cut_results[i][ghi_tag].tolist())
+        day_diff = array(cut_results[i][Y_tag].tolist())
         day_start = int(datetime.strptime(cut_results[i].index[0], '%m/%d/%Y %H:%M:%S %p').strftime('%H'))
         for l in range(1,len(day_diff)-1):
             left_data = day_diff[:l]
@@ -105,5 +108,3 @@ def get_weighted_middle_of_day_and_calculate_float_since_noon(cut_results, ghi_t
         hours_kpi.append(float_hours)
 
     return middles_dates, hours_kpi
-
-
