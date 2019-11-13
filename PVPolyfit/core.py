@@ -490,7 +490,7 @@ class PVPolyfit:
                 combined_test_km_labels.append(self.test_km_labels)
                 combined_day_counts.append([train_model_day_count, test_model_day_count])
                 P_se_km = kernel.EvaluateModel(
-                    np.array(self.test_df[self.Y_tag]), np.array(self.kmeans_Y_lists)
+                    self.test_df[self.Y_tag].values, np.array(self.kmeans_Y_lists)
                 ).rmse()
                 P_se_list.append(P_se_km)
 
@@ -539,8 +539,8 @@ class PVPolyfit:
             # iterate by degree
             for j in range(len(self.all_best_dfs)):
                 iterating_rmse = kernel.EvaluateModel(
-                    np.array(self.test_cut_results[i][self.Y_tag]),
-                    np.array(self.all_best_dfs[j][i]["Y"]),
+                    self.test_cut_results[i][self.Y_tag].values,
+                    self.all_best_dfs[j][i]["Y"].values,
                 ).rmse()
                 print("Degree ", j, " has error: ", iterating_rmse)
                 if abs(iterating_rmse) < abs(_min):
@@ -614,7 +614,7 @@ class PVPolyfit:
                 day_index = self.all_best_dfs[ind][i].index.tolist()
                 day_maxes = self.all_best_dfs[ind][i]["maxs"].tolist()
                 day_mins = self.all_best_dfs[ind][i]["mins"].tolist()
-                day_meas = np.array(self.test_cut_results[i][self.Y_tag].tolist())
+                day_meas = self.test_cut_results[i][self.Y_tag].values
                 meases.append(day_meas)
                 dt_index = pd.to_datetime(day_index)
 

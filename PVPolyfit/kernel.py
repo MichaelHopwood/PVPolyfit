@@ -251,7 +251,7 @@ def process_test_data_through_models(test_kmeans_dfs, kmeans_saved_models, test_
         if len(test_kmeans_df) == 0:
             raise Exception("DataFrame of zero length has been detected")
 
-        temps = [np.array(test_kmeans_df[x]) for x in xs]
+        temps = [test_kmeans_df[x].values for x in xs]
 
         Y_list = [
             kmeans_saved_models[model_index].output([item[j] for item in temps])
