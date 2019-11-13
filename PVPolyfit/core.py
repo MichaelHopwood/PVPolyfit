@@ -39,8 +39,12 @@ def pvpolyfit(
     graph_type="regression",
     print_info=False,
 ):
-    if len(train_df) == 0 or len(test_df) == 0:
-        raise Exception("Either one or both DataFrames are empty.")
+    # Sanitation checks
+    if len(train_df.index) == 0:
+        raise Exception("Training dataframe is empty.")
+
+    if len(test_df.index) == 0:
+        raise Exception("Test dataframe is empty.")
 
     pvpoly = PVPolyfit(train_df, test_df, Y_tag, xs, I_tag, ghi_tag, cs_tag, print_info)
 
@@ -52,36 +56,43 @@ def pvpolyfit(
     combined_labels = []
     for i in range(1, highest_num_clusters + 1):
         pvpoly_iter = copy.deepcopy(pvpoly)
+        # Seperate into multiple try/excepts to localize problem
         try:
-
             labels = pvpoly_iter.run(
                 num_clusters=i,
                 num_iterations=1,
                 degrees=list(range(1, highest_degree + 1)),
                 kernel_type=kernel_type,
             )
-
-            all_best_dfs, ultimate_days, avg_rmse, std_rmse = pvpoly_iter.evaluate(
-                print_info=print_info
-            )
-            rmse_list.append(avg_rmse)
-            std_rmse_list.append(std_rmse)
-            pvpoly_objects.append(pvpoly_iter)
-            combined_labels.append(labels)
-
         except Exception as e:
             if print_info:
                 print(e)
             break
 
-    if len(rmse_list) == 0:
-        raise Exception("No Output was produced.")
+        try:
+            all_best_dfs, ultimate_days, avg_rmse, std_rmse = pvpoly_iter.evaluate(
+                print_info=print_info
+            )
+        except Exception as e:
+            if print_info:
+                print(e)
+            break
+
+        rmse_list.append(avg_rmse)
+        std_rmse_list.append(std_rmse)
+        pvpoly_objects.append(pvpoly_iter)
+        combined_labels.append(labels)
+
+    if not rmse_list:
+        raise Exception("RMSE List was empty -> No Output was produced.")
 
     min_idx = np.argmin(rmse_list)
 
+    clusters_used = range(1, highest_num_clusters + 1)[min_idx]
+
     if print_info:
-        print(min_idx)
-        print("{} cluster(s) were used.".format(range(1, highest_num_clusters + 1)[min_idx]))
+        print(f"Min idx: {min_idx}")
+        print(f"{clusters_used} cluster(s) were used.")
 
     days_rmses, model_output, meases, df = pvpoly_objects[min_idx].plot(
         graph_type=graph_type, print_info=print_info, plot_graph=plot_graph
@@ -91,7 +102,7 @@ def pvpolyfit(
         model_output,
         meases,
         days_rmses,
-        range(1, highest_num_clusters + 1)[min_idx],
+        clusters_used,
         df,
         combined_labels[min_idx],
     )
@@ -115,9 +126,12 @@ def _pvpolyfit_inputCluster(
     graph_type="regression",
     print_info=False,
 ):
-    # print('inside')
-    if len(train_df) == 0 or len(test_df) == 0:
-        raise Exception("Either one or both DataFrames are empty.")
+    # Sanitation checks
+    if len(train_df.index) == 0:
+        raise Exception("Training dataframe is empty.")
+
+    if len(test_df.index) == 0:
+        raise Exception("Test dataframe is empty.")
 
     pvpoly = PVPolyfit(train_df, test_df, Y_tag, xs, I_tag, ghi_tag, cs_tag, print_info)
 
@@ -130,12 +144,17 @@ def _pvpolyfit_inputCluster(
             degrees=list(range(1, highest_degree + 1)),
             kernel_type=kernel_type,
         )
-        all_best_dfs, ultimate_days, avg_rmse, std_rmse = pvpoly.evaluate(print_info=print_info)
-
     except Exception as e:
-        raise Exception("Error has occurred: ", e)
+        if print_info:
+            print(e)
 
-    if len(str(avg_rmse)) == 0:
+    try:
+        all_best_dfs, ultimate_days, avg_rmse, std_rmse = pvpoly.evaluate(print_info=print_info)
+    except Exception as e:
+        if print_info:
+            print(e)
+
+    if not avg_rmse:
         raise Exception("No Output was produced. Go here for more information: ")
 
     days_rmses, model_output, meases, df = pvpoly.plot(
@@ -150,10 +169,8 @@ def break_days(df, filter_bool, min_count_per_day=8, frequency="days", print_inf
     day_hour_list = []
     prev = 0
     for index, j in enumerate(df.index):
-        if str(type(j)) != "<class 'str'>":
-            print(type(j))
-            print(j)
-            print(df.loc[j])
+        if not isinstance(j, str):
+            print(f"Index value {j} is of type {type(j)} with value {df.loc[j]}")
             j = j.strftime("%m/%d/%Y %H:%M:%S %p")
         if frequency == "days":
             curr = int(datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%d"))
@@ -167,6 +184,7 @@ def break_days(df, filter_bool, min_count_per_day=8, frequency="days", print_inf
         prev = curr
 
     cut_results = []
+
     # Break df into days
     for k in range(len(index_list)):
         if k == (len(index_list) - 1):
@@ -188,6 +206,7 @@ def heat_plot(df, N):
     lizt = []
 
     comb_df = pd.DataFrame()
+
     cut_df = cut_df[1:-1]
     dates = []
     for i in range(len(cut_df)):
@@ -302,7 +321,7 @@ class PVPolyfit:
         # ultimate_days[Day][i, ind]
         self.ultimate_days = []
 
-    def prepare(self, Y_high_filter, min_count_per_day, include_preprocess):
+    def prepare(self, Y_high_filter, min_count_per_day, include_preprocess, use_mhopwood=False):
         """ Preprocess and classify days in DataFrame """
         self.train_df = preprocess.data_preprocessing(
             self.train_df,
@@ -314,20 +333,19 @@ class PVPolyfit:
             self.print_info,
             include_preprocess,
         )
-        # if len(self.cs_tag) != 0 or len(self.ghi_tag) != 0:
-        if True:
-            if include_preprocess:
-                classification, k, MF = preprocess.classify_weather_day_GM_Tina(
-                    self.train_df, self.cs_tag, self.ghi_tag
-                )
-                self.train_df["day_type"] = classification
-
-        if False:
+        if use_mhopwood:
             if include_preprocess:
                 classification = cluster.classify_weather_day_MHopwood(
                     self.cut_results, self.Y_tag, self.xs, kmeans_num_clusters=4
                 )
                 self.train_df["day_type"] = classification
+        else:
+            if include_preprocess:
+                classification, _, _ = preprocess.classify_weather_day_GM_Tina(
+                    self.train_df, self.cs_tag, self.ghi_tag
+                )
+                self.train_df["day_type"] = classification
+
         # cuts train_df into daily DF's
         # also returns a filtered train_df which cuts out a day if its length is too small
         (
@@ -371,13 +389,13 @@ class PVPolyfit:
         )
 
         if len(self.cs_tag) != 0 or len(self.ghi_tag) != 0:
-            test_classification, test_k, test_MF = preprocess.classify_weather_day_GM_Tina(
+            test_classification, _, _ = preprocess.classify_weather_day_GM_Tina(
                 self.test_df, self.cs_tag, self.ghi_tag
             )
             self.test_df["day_type"] = test_classification
 
         (
-            test_index_list,
+            _,
             test_day_hour_list,
             self.test_cut_results,
             self.test_df,
@@ -389,10 +407,7 @@ class PVPolyfit:
             print_info=self.print_info,
         )
 
-        (
-            test_middles_dates,
-            test_hours_kpi,
-        ) = utilities.get_weighted_middle_of_day_and_calculate_float_since_noon(
+        _, test_hours_kpi = utilities.get_weighted_middle_of_day_and_calculate_float_since_noon(
             self.test_cut_results, self.Y_tag
         )
 
@@ -404,9 +419,7 @@ class PVPolyfit:
             self.test_cut_results, test_hours_kpi, test_day_hour_list, self.Y_tag, self.xs
         )
 
-    def run(
-        self, num_clusters=6, num_iterations=1, degrees=list(range(1, 10)), kernel_type="polynomial"
-    ):
+    def run(self, num_clusters=6, num_iterations=1, degrees=None, kernel_type="polynomial"):
         """
         Iterates through Degrees
         For each Degree, iterates n times
@@ -426,6 +439,8 @@ class PVPolyfit:
                 type of regression kernel to be used
                 OPTIONS: polynomial - a(AB)+
         """
+        if degrees is None:
+            degrees = list(range(1, 10))
 
         self.num_clusters = num_clusters
         self.num_iterations = num_iterations
@@ -442,7 +457,7 @@ class PVPolyfit:
             combined_test_km_labels = []
 
             # 1. Run the code an n number of times
-            for i in range(self.num_iterations):
+            for _ in range(self.num_iterations):
                 # clusters and adds 'model_num' column to cut_results & test_cut_results
                 (
                     train_kmeans_dfs,
@@ -475,7 +490,7 @@ class PVPolyfit:
                 combined_test_km_labels.append(self.test_km_labels)
                 combined_day_counts.append([train_model_day_count, test_model_day_count])
                 P_se_km = kernel.EvaluateModel(
-                    np.array(self.test_df[self.Y_tag].tolist()), np.array(self.kmeans_Y_lists)
+                    np.array(self.test_df[self.Y_tag]), np.array(self.kmeans_Y_lists)
                 ).rmse()
                 P_se_list.append(P_se_km)
 
@@ -483,15 +498,15 @@ class PVPolyfit:
             mins = []
             maxs = []
             for i in range(len(self.test_df.index)):
-                min = 9999
-                max = -9999
+                _min = 9999
+                _max = -9999
                 for j in range(len(combined_P_list)):
-                    if combined_P_list[j][i] < min:
-                        min = combined_P_list[j][i]
-                    if combined_P_list[j][i] > max:
-                        max = combined_P_list[j][i]
-                mins.append(min)
-                maxs.append(max)
+                    if combined_P_list[j][i] < _min:
+                        _min = combined_P_list[j][i]
+                    if combined_P_list[j][i] > _max:
+                        _max = combined_P_list[j][i]
+                mins.append(_min)
+                maxs.append(_max)
 
             best_index = np.argmin(P_se_list)
             best_model = combined_P_list[best_index]
@@ -519,17 +534,17 @@ class PVPolyfit:
         all_rmse = []
         self.ultimate_days = []
         for i in range(len(self.all_best_dfs[0])):
-            min = 9999
+            _min = 9999
             ind = 0
             # iterate by degree
             for j in range(len(self.all_best_dfs)):
                 iterating_rmse = kernel.EvaluateModel(
-                    np.array(self.test_cut_results[i][self.Y_tag].tolist()),
-                    np.array(self.all_best_dfs[j][i]["Y"].tolist()),
+                    np.array(self.test_cut_results[i][self.Y_tag]),
+                    np.array(self.all_best_dfs[j][i]["Y"]),
                 ).rmse()
                 print("Degree ", j, " has error: ", iterating_rmse)
-                if abs(iterating_rmse) < abs(min):
-                    min = iterating_rmse
+                if abs(iterating_rmse) < abs(_min):
+                    _min = iterating_rmse
                     ind = j
             if print_info:
                 print(
@@ -537,15 +552,20 @@ class PVPolyfit:
                         len(self.all_best_dfs), ind, len(self.degrees)
                     )
                 )
-                print("Day {} chooses degree {} with {}".format(i, self.degrees[ind], min))
-            all_rmse.append(min)
+                print("Day {} chooses degree {} with {}".format(i, self.degrees[ind], _min))
+            all_rmse.append(_min)
             self.ultimate_days.append([i, ind])
 
-        self.avg_rmse = np.array(all_rmse).mean()
-        return self.all_best_dfs, self.ultimate_days, self.avg_rmse, np.array(all_rmse).std()
+        self.avg_rmse = np.mean(all_rmse)
+        return self.all_best_dfs, self.ultimate_days, self.avg_rmse, np.std(all_rmse)
 
     def plot(self, graph_type="regression", print_info=True, plot_graph=False):
+        # Initialize at start so no error thrown if plot is not `regression`
         iter_rmses = []
+        model_outputs = []
+        meases = []
+        df = pd.DataFrame(columns=["error", "model_output", "meas"])
+
         if graph_type == "regression":
             colors = [
                 "red",
@@ -580,8 +600,6 @@ class PVPolyfit:
                 "sienna",
                 "salmon",
             ] * 5
-            model_outputs = []
-            meases = []
             df_index = []
             uncer_vals = []
             df_meases = []
@@ -637,8 +655,6 @@ class PVPolyfit:
             df["error"] = uncer_values
             df["model_output"] = [item for sublist in model_outputs for item in sublist]
             df["meas"] = [item for sublist in df_meases for item in sublist]
-
-            # df.to_csv('D://PVPolyfit_to_pi1.csv')
 
         return iter_rmses, model_outputs, meases, df
 
