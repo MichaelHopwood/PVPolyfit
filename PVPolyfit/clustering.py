@@ -24,7 +24,7 @@ def classify_weather_day_MHopwood(cut_results, Y_tag, xs, kmeans_num_clusters=4)
             )
             daysecs.append(_daysecs)
 
-        vals_for_vstack = [np.array(df[x]) for x in xs]
+        vals_for_vstack = [df[x].values for x in xs]
 
         ordered_pairs = np.hstack((np.vstack(daysecs), np.vstack(vals_for_vstack).T))
 
@@ -113,9 +113,9 @@ def save_model_for_each_cluster(kmeans_dfs, degree, Y_tag, xs, kernel_type):
             saved_models.append(0)
             continue
 
-        Y = np.array(kmeans_df[Y_tag])
+        Y = kmeans_df[Y_tag].values
 
-        inputs = [np.array(kmeans_df[x]) for x in xs]
+        inputs = [kmeans_df[x].values for x in xs]
 
         model = kernel.Model(inputs, Y, degree, kernel_type)
         model.build()
@@ -150,7 +150,7 @@ def create_conglomerated_vectors_for_clustering_algorithm(
 
             ordered_pair = [
                 hours_kpi[index],
-                np.array(df[Y_tag].tolist()).sum(),
+                df[Y_tag].sum(),
                 max_v,
                 onez,
                 twos,

@@ -3,7 +3,6 @@ import datetime
 import warnings
 
 # Third party
-import numpy as np
 import pandas as pd
 import scipy
 
@@ -77,7 +76,7 @@ def get_weighted_middle_of_day_and_calculate_float_since_noon(cut_results, Y_tag
     middles_dates = []
     cur_diff_integral = 999999
     for i in range(len(cut_results)):
-        day_diff = np.array(cut_results[i][Y_tag].tolist())
+        day_diff = cut_results[i][Y_tag].values
         for l in range(1, len(day_diff) - 1):
             left_data = day_diff[:l]
             right_data = day_diff[l:]
