@@ -54,10 +54,9 @@ class Model:
 
             # list of polynomial powers
             poly_powers = []
-            for i in combinations:
+            for combination in combinations:
                 sum_arr = np.zeroes(num_inputs + 1, dtype=int)
-                for j in i:
-                    sum_arr += np.array(j)
+                sum_arr += sum((np.array(j) for j in combination))
                 poly_powers.append(sum_arr)
 
             # Raise data to specified degree pattern and stack
@@ -70,10 +69,6 @@ class Model:
             # get solution with smallest error via least-squares
             # returns coefficients of polynomial
             a_hat = np.linalg.lstsq(A, self.Y, rcond=-1)[0]
-
-            # check if valid lengths
-            # if len(a_hat) == 0 or len(poly_powers) == 0:
-            #    raise Exception("PVPolyfit algorithm returned list of length zero for either coeff. or powers")
 
             # save resolved coefficients
             self.a_hat = a_hat
@@ -108,12 +103,9 @@ class Model:
 
             # list of polynomial powers
             poly_powers = []
-            for i in combinations:
-
+            for combination in combinations:
                 sum_arr = np.zeroes(num_inputs + 1 + 1, dtype=int)
-                # sum_arr = np.zeroes(num_inputs+1+num_inputs, dtype=int)
-                for j in i:
-                    sum_arr += np.array(j)
+                sum_arr += sum((np.array(j) for j in combination))
                 poly_powers.append(sum_arr)
 
             # print(poly_powers)
@@ -129,10 +121,6 @@ class Model:
             # get solution with smallest error via least-squares
             # returns coefficients of polynomial
             a_hat = np.linalg.lstsq(A, self.Y, rcond=-1)[0]
-
-            # check if valid lengths
-            # if len(a_hat) == 0 or len(poly_powers) == 0:
-            #    raise Exception("PVPolyfit algorithm returned list of length zero for either coeff. or powers")
 
             # save resolved coefficients
             self.a_hat = a_hat
@@ -164,21 +152,18 @@ class Model:
             self.powers = []
 
     def output(self, temps):
-        """ Evaluate output with input parameters
-            and polynomial information
+        """Evaluate output with input parameters and polynomial information
 
             temps: temporary inputs
-
         """
 
         if self.kernel_type == 0:
             # polynomial
             fit = 0
-            for b, z in zip(self.a_hat, self.powers):
-                iter = b
-                for k in range(1, len(z)):
-                    iter *= temps[k - 1] ** z[k]
-                fit += iter
+            for _iter, power in zip(self.a_hat, self.powers):
+                for index in range(1, len(power)):
+                    _iter *= temps[index - 1] ** power[index]
+                fit += _iter
 
         if self.kernel_type == 1:
             # polynomial with included log(POA) parameter
@@ -186,17 +171,11 @@ class Model:
 
             temps.append(np.log(temps[0]))
 
-            # lis=[]
-            # for i in temps:
-            #    lis.append(np.log(i))
-            # temps += lis
-
             fit = 0
-            for b, z in zip(self.a_hat, self.powers):
-                iter = b
-                for k in range(1, len(z)):
-                    iter *= temps[k - 1] ** z[k]
-                fit += iter
+            for _iter, power in zip(self.a_hat, self.powers):
+                for index in range(1, len(power)):
+                    _iter *= temps[index - 1] ** power[index]
+                fit += _iter
 
         if self.kernel_type == 2:
             # diode inspired
@@ -236,20 +215,20 @@ def process_test_data_through_models(test_kmeans_dfs, kmeans_saved_models, test_
     # Then, it will be pushed through the models
 
     new_dfs = []
-    for i in range(len(test_kmeans_dfs)):
+    for kmeans_saved_model, test_kmeans_df in zip(kmeans_saved_models, test_kmeans_dfs):
         # Check for error case
-        # print(kmeans_saved_models[i], test_kmeans_dfs[i])
-        if kmeans_saved_models[i] == 0 and len(test_kmeans_dfs[i] != 0):
+        # print(kmeans_saved_models[i], test_kmeans_df)
+        if kmeans_saved_model == 0 and len(test_kmeans_df.index) != 0:
             raise Exception(
                 "Input Error: PVPolyfit requires either less clusters or more training data."
             )
 
-        if len(test_kmeans_dfs[i]) == 0:
+        if len(test_kmeans_df.index) == 0:
             continue
 
         # need to parse days from each df
         _, _, dfs, _ = utilities.find_and_break_days_or_hours(
-            test_kmeans_dfs[i], False, min_count_per_day=0, frequency="days"
+            test_kmeans_df, False, min_count_per_day=0, frequency="days"
         )
         new_dfs.append(dfs)
 
@@ -262,28 +241,22 @@ def process_test_data_through_models(test_kmeans_dfs, kmeans_saved_models, test_
             if datetime.strptime(
                 test_kmeans_dfs[i].index[0], "%m/%d/%Y %H:%M:%S %p"
             ) < datetime.strptime(test_kmeans_dfs[j].index[0], "%m/%d/%Y %H:%M:%S %p"):
-                temp = test_kmeans_dfs[i]
-                test_kmeans_dfs[i] = test_kmeans_dfs[j]
-                test_kmeans_dfs[j] = temp
+                test_kmeans_dfs[i], test_kmeans_dfs[j] = test_kmeans_dfs[j], test_kmeans_dfs[i]
 
     # iterate through dfs and run models
     kmeans_Y_lists = []
 
-    for i in range(len(test_kmeans_dfs)):
+    for model_index, test_kmeans_df in zip(test_km_labels, test_kmeans_dfs):
         # if model does not have any days
-        if len(test_kmeans_dfs[i]) == 0:
+        if len(test_kmeans_df) == 0:
             raise Exception("DataFrame of zero length has been detected")
 
-        temps = []
-        for j in range(len(xs)):
-            temps.append(np.array(test_kmeans_dfs[i][xs[j]].tolist()))
+        temps = [np.array(test_kmeans_df[x]) for x in xs]
 
-        model_index = test_km_labels[i]
-        Y_list = []
-        for j in range(len(temps[0])):
-            inputs_iter = [item[j] for item in temps]
-            Y_val = (kmeans_saved_models[model_index]).output(inputs_iter)
-            Y_list.append(Y_val)
+        Y_list = [
+            kmeans_saved_models[model_index].output([item[j] for item in temps])
+            for j in range(len(temps[0]))
+        ]
 
         kmeans_Y_lists.append(Y_list)
 
