@@ -1,17 +1,17 @@
+# Standard
 import copy
-import itertools
-import time
 import warnings
 from datetime import datetime
 from math import sqrt
 
-import matplotlib.dates as mdates
+# Third party
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from numpy import array, asarray, hstack, linalg, mean, ones, std, vstack, zeros
 from PVPolyfit import clustering as cluster
+
+# Source
 from PVPolyfit import kernel
 from PVPolyfit import preprocessing as preprocess
 from PVPolyfit import utilities
@@ -39,14 +39,13 @@ def pvpolyfit(
     graph_type="regression",
     print_info=False,
 ):
-    # print("h ERE")
     if len(train_df) == 0 or len(test_df) == 0:
         raise Exception("Either one or both DataFrames are empty.")
 
     pvpoly = PVPolyfit(train_df, test_df, Y_tag, xs, I_tag, ghi_tag, cs_tag, print_info)
-    # print("H eRE")
+
     pvpoly.prepare(Y_high_filter, min_count_per_day, include_preprocess)
-    # print("He RE")
+
     rmse_list = []
     std_rmse_list = []
     pvpoly_objects = []
@@ -166,7 +165,6 @@ def break_days(df, filter_bool, min_count_per_day=8, frequency="days", print_inf
             index_list.append(index)
             day_hour_list.append(frq)
         prev = curr
-        last_index = index
 
     cut_results = []
     # Break df into days
@@ -190,7 +188,6 @@ def heat_plot(df, N):
     lizt = []
 
     comb_df = pd.DataFrame()
-    temp_df = pd.DataFrame()
     cut_df = cut_df[1:-1]
     dates = []
     for i in range(len(cut_df)):
@@ -270,7 +267,8 @@ class PVPolyfit:
     | Measured GHI, ghi_tag  | GHI (irradiance)    | Day classification       |
     | PVLib Clearsky, cs_tag | Simulated GHI       | Day classification       |
 
-    PVLib has a good tutorial to generate clearsky data: https://pvlib-python.readthedocs.io/en/stable/generated/pvlib.location.Location.get_clearsky.html
+    PVLib has a good tutorial to generate clearsky data:
+        https://pvlib-python.readthedocs.io/en/stable/generated/pvlib.location.Location.get_clearsky.html
     """
 
     def __init__(self, train_df, test_df, Y_tag, xs, I_tag, ghi_tag, cs_tag, print_info):
@@ -477,7 +475,7 @@ class PVPolyfit:
                 combined_test_km_labels.append(self.test_km_labels)
                 combined_day_counts.append([train_model_day_count, test_model_day_count])
                 P_se_km = kernel.EvaluateModel(
-                    array(self.test_df[self.Y_tag].tolist()), array(self.kmeans_Y_lists)
+                    np.array(self.test_df[self.Y_tag].tolist()), np.array(self.kmeans_Y_lists)
                 ).rmse()
                 P_se_list.append(P_se_km)
 
@@ -526,8 +524,8 @@ class PVPolyfit:
             # iterate by degree
             for j in range(len(self.all_best_dfs)):
                 iterating_rmse = kernel.EvaluateModel(
-                    array(self.test_cut_results[i][self.Y_tag].tolist()),
-                    array(self.all_best_dfs[j][i]["Y"].tolist()),
+                    np.array(self.test_cut_results[i][self.Y_tag].tolist()),
+                    np.array(self.all_best_dfs[j][i]["Y"].tolist()),
                 ).rmse()
                 print("Degree ", j, " has error: ", iterating_rmse)
                 if abs(iterating_rmse) < abs(min):
@@ -598,7 +596,7 @@ class PVPolyfit:
                 day_index = self.all_best_dfs[ind][i].index.tolist()
                 day_maxes = self.all_best_dfs[ind][i]["maxs"].tolist()
                 day_mins = self.all_best_dfs[ind][i]["mins"].tolist()
-                day_meas = array(self.test_cut_results[i][self.Y_tag].tolist())
+                day_meas = np.array(self.test_cut_results[i][self.Y_tag].tolist())
                 meases.append(day_meas)
                 dt_index = pd.to_datetime(day_index)
 
@@ -611,8 +609,8 @@ class PVPolyfit:
                     plt.xticks(rotation=60)
                     plt.title("Modelled Multiple Day Types (by color)")
 
-                uncer = array(Y_output_daily) - day_meas  # /(day_meas))
-                calc_rmse = sqrt(mean_squared_error(day_meas, array(Y_output_daily)))
+                uncer = np.array(Y_output_daily) - day_meas  # /(day_meas))
+                calc_rmse = sqrt(mean_squared_error(day_meas, np.array(Y_output_daily)))
                 iter_rmses.append(calc_rmse)
                 df_index.append(dt_index)
                 uncer_vals.append(uncer)

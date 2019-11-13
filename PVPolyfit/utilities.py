@@ -1,16 +1,11 @@
-import itertools
-import time
+# Standard
+import datetime
 import warnings
-from datetime import datetime
-from math import sqrt
 
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
+# Third party
 import numpy as np
 import pandas as pd
 import scipy
-from numpy import array, asarray, hstack, linalg, mean, ones, std, vstack, zeros
-from sklearn.metrics import mean_squared_error
 
 warnings.filterwarnings("ignore")
 
@@ -27,16 +22,15 @@ def find_and_break_days_or_hours(
             print(j)
             print(df.loc[j])
         if frequency == "days":
-            curr = int(datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%d"))
-            frq = datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%m/%d/%Y")
+            curr = int(datetime.datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%d"))
+            frq = datetime.datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%m/%d/%Y")
         elif frequency == "hours":
-            curr = int(datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%H"))
-            frq = datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%m/%d/%Y %H")
+            curr = int(datetime.datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%H"))
+            frq = datetime.datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%m/%d/%Y %H")
         if curr != prev:
             index_list.append(index)
             day_hour_list.append(frq)
         prev = curr
-        last_index = index
 
     cut_results = []
     # Break df into days
@@ -83,10 +77,7 @@ def get_weighted_middle_of_day_and_calculate_float_since_noon(cut_results, Y_tag
     middles_dates = []
     cur_diff_integral = 999999
     for i in range(len(cut_results)):
-        day_diff = array(cut_results[i][Y_tag].tolist())
-        day_start = int(
-            datetime.strptime(cut_results[i].index[0], "%m/%d/%Y %H:%M:%S %p").strftime("%H")
-        )
+        day_diff = np.array(cut_results[i][Y_tag].tolist())
         for l in range(1, len(day_diff) - 1):
             left_data = day_diff[:l]
             right_data = day_diff[l:]
@@ -107,14 +98,14 @@ def get_weighted_middle_of_day_and_calculate_float_since_noon(cut_results, Y_tag
     # For each middle, calculate number of hours, as float, since noon
     hours_kpi = []
     for i in middles_dates:
-        noon = datetime.strptime(
+        noon = datetime.datetime.strptime(
             (
-                str(datetime.strptime(i, "%m/%d/%Y %H:%M:%S %p").strftime("%m/%d/%Y"))
+                str(datetime.datetime.strptime(i, "%m/%d/%Y %H:%M:%S %p").strftime("%m/%d/%Y"))
                 + " 12:00:00 PM"
             ),
             "%m/%d/%Y %H:%M:%S %p",
         )
-        cur = datetime.strptime(i, "%m/%d/%Y %I:%M:%S %p")
+        cur = datetime.datetime.strptime(i, "%m/%d/%Y %I:%M:%S %p")
         td = cur - noon
         float_hours = td.total_seconds() / 3600
 
