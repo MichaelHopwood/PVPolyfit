@@ -8,7 +8,7 @@ import pandas as pd
 # Source
 from PVPolyfit import kernel
 from sklearn.cluster import KMeans
-
+ 
 
 def classify_weather_day_MHopwood(cut_results, Y_tag, xs, kmeans_num_clusters=4):
     # make parameters for sub-daily

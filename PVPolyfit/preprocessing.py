@@ -1,34 +1,24 @@
-import itertools
-import time
+# Standard
 import warnings
 from datetime import datetime
-from math import sqrt
 
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
+# Third party
 import numpy as np
 import pandas as pd
-import pvlib
-import scipy
-from numpy import array, asarray, hstack, linalg, mean, ones, std, vstack, zeros
-from pvlib import atmosphere, clearsky, solarposition
-from pvlib.iotools import read_tmy3
-from pvlib.irradiance import get_extra_radiation
 from pvlib.location import Location
-from sklearn.metrics import mean_squared_error
 
 warnings.filterwarnings("ignore")
 
 
 def classify_weather_day_GM_Tina(df, clearsky_ghi_tag, meas_ghi_tag):
-    X_csm = array(df[clearsky_ghi_tag].tolist())
-    X_meas = array(df[meas_ghi_tag].tolist())
+    X_csm = np.array(df[clearsky_ghi_tag].tolist())
+    X_meas = np.array(df[meas_ghi_tag].tolist())
 
     # Calculate index of serenity, k
     # a k is calculated for every index
 
     k = abs(X_meas - X_csm) / X_csm
-    k = array(k)
+    k = np.array(k)
     # print("final vals k: ", k, "min k: ", k.min(), "max k: ", k.max())
 
     # TODO:
@@ -53,7 +43,7 @@ def classify_weather_day_GM_Tina(df, clearsky_ghi_tag, meas_ghi_tag):
 
         MA.append(sumk)
 
-    MA = array(MA) * (1 / Nm)
+    MA = np.array(MA) * (1 / Nm)
 
     # print("CHECK: make sure lengths are equal (k and MA): ", len(k), len(MA))
 
@@ -72,7 +62,7 @@ def classify_weather_day_GM_Tina(df, clearsky_ghi_tag, meas_ghi_tag):
 
         MF.append(sumMF)
 
-    MF = array(MF)
+    MF = np.array(MF)
 
     # Classification logic
     classification = []
@@ -117,9 +107,9 @@ def data_preprocessing(df, xs, Y_tag, I_tag, cs_tag, Y_high_filter, print_info, 
         # if True:
         # OUTLIER REMOVAL
         old_num_rows = len(df.index)
-        I_vs_Irr = array(df[I_tag].tolist()) / array(df[xs[0]].tolist())
-        avg = mean(I_vs_Irr, axis=0)
-        sd = std(I_vs_Irr, axis=0)
+        I_vs_Irr = np.array(df[I_tag].tolist()) / np.array(df[xs[0]].tolist())
+        avg = np.mean(I_vs_Irr, axis=0)
+        sd = np.std(I_vs_Irr, axis=0)
         sigmas = 3
         outliers = [
             (True if ((x < avg - sigmas * sd) or (x > avg + sigmas * sd)) else False)
@@ -127,7 +117,7 @@ def data_preprocessing(df, xs, Y_tag, I_tag, cs_tag, Y_high_filter, print_info, 
         ]
 
         df["outlier_bool"] = outliers
-        df = df[df["outlier_bool"] == False]
+        df = df[~df["outlier_bool"]]
         df.drop(columns=["outlier_bool"])
 
         if print_info:
