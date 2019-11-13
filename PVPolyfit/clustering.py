@@ -108,7 +108,7 @@ def save_model_for_each_cluster(kmeans_dfs, degree, Y_tag, xs, kernel_type):
     # print"start of model")
     for kmeans_df in kmeans_dfs:
 
-        if not kmeans_df:
+        if len(kmeans_df.index) == 0:
             # if model has no data
             saved_models.append(0)
             continue
