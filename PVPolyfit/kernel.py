@@ -1,22 +1,21 @@
-from numpy import linalg, zeros, ones, hstack, asarray, vstack, array, mean, std
 import itertools
-import matplotlib.pyplot as plt
-from datetime import datetime
-import pandas as pd
-import numpy as np
-import scipy
-import matplotlib.dates as mdates
-from sklearn.metrics import mean_squared_error
-from math import sqrt
 import warnings
+from datetime import datetime
+from math import sqrt
+
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import scipy
+from numpy import array, asarray, hstack, linalg, mean, ones, std, vstack, zeros
+from PVPolyfit import utilities
+from sklearn.metrics import mean_squared_error
+
 warnings.filterwarnings("ignore")
 
 
-
-from PVPolyfit import utilities
-
 class Model:
-
     def __init__(self, inputs, Y, degree, kernel_type):
 
         self.inputs = inputs
@@ -44,9 +43,9 @@ class Model:
 
             # construct identity matrix
             iden_matrix = []
-            for i in range(num_inputs+1):
+            for i in range(num_inputs + 1):
                 # create array of zeros
-                row = zeros(num_inputs+1, dtype=int)
+                row = zeros(num_inputs + 1, dtype=int)
                 # add 1 to diagonal index
                 row[i] = 1
                 iden_matrix.append(row)
@@ -57,7 +56,7 @@ class Model:
             # list of polynomial powers
             poly_powers = []
             for i in combinations:
-                sum_arr = np.zeros(num_inputs+1, dtype=int)
+                sum_arr = np.zeros(num_inputs + 1, dtype=int)
                 for j in i:
                     sum_arr += array(j)
                 poly_powers.append(sum_arr)
@@ -65,7 +64,7 @@ class Model:
             # Raise data to specified degree pattern and stack
             A = []
             for power in poly_powers:
-                product = (xs**power).prod(1)
+                product = (xs ** power).prod(1)
                 A.append(product.reshape(product.shape + (1,)))
             A = hstack(array(A))
 
@@ -74,7 +73,7 @@ class Model:
             a_hat = linalg.lstsq(A, self.Y, rcond=-1)[0]
 
             # check if valid lengths
-            #if len(a_hat) == 0 or len(poly_powers) == 0:
+            # if len(a_hat) == 0 or len(poly_powers) == 0:
             #    raise Exception("PVPolyfit algorithm returned list of length zero for either coeff. or powers")
 
             # save resolved coefficients
@@ -90,15 +89,15 @@ class Model:
             num_inputs, len_input = xs.shape[1], xs.shape[0]
             # add column of rows in first index of matrix
             xs = hstack((ones((len_input, 1), dtype=float), xs, vstack(np.log(self.inputs[0]))))
-            #xs = hstack((ones((len_input, 1), dtype=float), xs, np.log(xs)))
+            # xs = hstack((ones((len_input, 1), dtype=float), xs, np.log(xs)))
             # construct identity matrix
             iden_matrix = []
 
-            for i in range(num_inputs+1+1):
-            #for i in range(num_inputs+1+num_inputs):
+            for i in range(num_inputs + 1 + 1):
+                # for i in range(num_inputs+1+num_inputs):
                 # create array of zeros
-                row = zeros(num_inputs+1+1, dtype=int)
-                #row = zeros(num_inputs+1+num_inputs, dtype=int)
+                row = zeros(num_inputs + 1 + 1, dtype=int)
+                # row = zeros(num_inputs+1+num_inputs, dtype=int)
                 # add 1 to diagonal index
                 row[i] = 1
                 iden_matrix.append(row)
@@ -110,19 +109,19 @@ class Model:
             poly_powers = []
             for i in combinations:
 
-                sum_arr = np.zeros(num_inputs+1+1, dtype=int)
-                #sum_arr = np.zeros(num_inputs+1+num_inputs, dtype=int)
+                sum_arr = np.zeros(num_inputs + 1 + 1, dtype=int)
+                # sum_arr = np.zeros(num_inputs+1+num_inputs, dtype=int)
                 for j in i:
                     sum_arr += array(j)
                 poly_powers.append(sum_arr)
 
-            #print(poly_powers)
-            #print(len(poly_powers))
+            # print(poly_powers)
+            # print(len(poly_powers))
 
             # Raise data to specified degree pattern and stack
             A = []
             for power in poly_powers:
-                product = (xs**power).prod(1)
+                product = (xs ** power).prod(1)
                 A.append(product.reshape(product.shape + (1,)))
             A = hstack(array(A))
 
@@ -131,14 +130,13 @@ class Model:
             a_hat = linalg.lstsq(A, self.Y, rcond=-1)[0]
 
             # check if valid lengths
-            #if len(a_hat) == 0 or len(poly_powers) == 0:
+            # if len(a_hat) == 0 or len(poly_powers) == 0:
             #    raise Exception("PVPolyfit algorithm returned list of length zero for either coeff. or powers")
 
             # save resolved coefficients
             self.a_hat = a_hat
             # save polynomial powers
             self.powers = poly_powers
-
 
         if self.kernel_type == 2:
             # Diode Inspired
@@ -151,9 +149,9 @@ class Model:
 
             # construct identity matrix
             iden_matrix = []
-            for i in range(num_inputs+1+num_inputs):
+            for i in range(num_inputs + 1 + num_inputs):
                 # create array of zeros
-                row = zeros(num_inputs+1+num_inputs, dtype=int)
+                row = zeros(num_inputs + 1 + num_inputs, dtype=int)
                 # add 1 to diagonal index
                 row[i] = 1
                 iden_matrix.append(row)
@@ -165,38 +163,38 @@ class Model:
             self.powers = []
 
     def output(self, temps):
-        ''' Evaluate output with input parameters
+        """ Evaluate output with input parameters
             and polynomial information
 
             temps: temporary inputs
 
-        '''
+        """
 
         if self.kernel_type == 0:
-            #polynomial
+            # polynomial
             fit = 0
             for b, z in zip(self.a_hat, self.powers):
                 iter = b
                 for k in range(1, len(z)):
-                    iter *= temps[k-1]**z[k]
+                    iter *= temps[k - 1] ** z[k]
                 fit += iter
 
         if self.kernel_type == 1:
-            #polynomial with included log(POA) parameter
+            # polynomial with included log(POA) parameter
             # requires POA be first input in xs
 
             temps.append(np.log(temps[0]))
 
-            #lis=[]
-            #for i in temps:
+            # lis=[]
+            # for i in temps:
             #    lis.append(np.log(i))
-            #temps += lis
+            # temps += lis
 
             fit = 0
             for b, z in zip(self.a_hat, self.powers):
                 iter = b
                 for k in range(1, len(z)):
-                    iter *= temps[k-1]**z[k]
+                    iter *= temps[k - 1] ** z[k]
                 fit += iter
 
         if self.kernel_type == 2:
@@ -205,16 +203,15 @@ class Model:
 
             x1_i, x2_i = temps
             b1, b2, b3, b4, b5 = self.a_hat
-            fit = b1 + b2*x1_i + b3*x2_i + b4*np.log(x1_i) + b5*np.log(x2_i)
-
+            fit = b1 + b2 * x1_i + b3 * x2_i + b4 * np.log(x1_i) + b5 * np.log(x2_i)
 
         return fit
 
     def info(self):
         return self.a_hat, self.powers
 
-class EvaluateModel:
 
+class EvaluateModel:
     def __init__(self, measured, modelled):
         from sklearn.metrics import mean_squared_error
         from math import sqrt
@@ -223,14 +220,14 @@ class EvaluateModel:
         self.modelled = modelled
 
     def r_squared(self):
-        ''' Calculate model's r-squared value '''
+        """ Calculate model's r-squared value """
         y_mean_line = [mean(self.measured) for y in self.measured]
         rmse_model = sqrt(mean_squared_error(self.measured, self.modelled))
         rmse_ymean = sqrt(mean_squared_error(self.measured, y_mean_line))
-        return 1 - (rmse_model/rmse_ymean)
+        return 1 - (rmse_model / rmse_ymean)
 
     def rmse(self):
-        ''' Calculate model's Root Mean Square Error (RMSE) '''
+        """ Calculate model's Root Mean Square Error (RMSE) """
         return sqrt(mean_squared_error(self.measured, self.modelled))
 
 
@@ -242,15 +239,19 @@ def process_test_data_through_models(test_kmeans_dfs, kmeans_saved_models, test_
     new_dfs = []
     for i in range(len(test_kmeans_dfs)):
         # Check for error case
-        #print(kmeans_saved_models[i], test_kmeans_dfs[i])
+        # print(kmeans_saved_models[i], test_kmeans_dfs[i])
         if kmeans_saved_models[i] == 0 and len(test_kmeans_dfs[i] != 0):
-            raise Exception("Input Error: PVPolyfit requires either less clusters or more training data.")
+            raise Exception(
+                "Input Error: PVPolyfit requires either less clusters or more training data."
+            )
 
         if len(test_kmeans_dfs[i]) == 0:
             continue
 
         # need to parse days from each df
-        _, _, dfs, _ = utilities.find_and_break_days_or_hours(test_kmeans_dfs[i], False, min_count_per_day = 0, frequency = 'days')
+        _, _, dfs, _ = utilities.find_and_break_days_or_hours(
+            test_kmeans_dfs[i], False, min_count_per_day=0, frequency="days"
+        )
         new_dfs.append(dfs)
 
     # flatten list of lists
@@ -259,7 +260,9 @@ def process_test_data_through_models(test_kmeans_dfs, kmeans_saved_models, test_
     # sort the dfs by datetime index
     for i in range(len(test_kmeans_dfs)):
         for j in range(len(test_kmeans_dfs)):
-            if (datetime.strptime(test_kmeans_dfs[i].index[0], '%m/%d/%Y %H:%M:%S %p') < datetime.strptime(test_kmeans_dfs[j].index[0], '%m/%d/%Y %H:%M:%S %p')):
+            if datetime.strptime(
+                test_kmeans_dfs[i].index[0], "%m/%d/%Y %H:%M:%S %p"
+            ) < datetime.strptime(test_kmeans_dfs[j].index[0], "%m/%d/%Y %H:%M:%S %p"):
                 temp = test_kmeans_dfs[i]
                 test_kmeans_dfs[i] = test_kmeans_dfs[j]
                 test_kmeans_dfs[j] = temp

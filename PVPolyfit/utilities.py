@@ -1,18 +1,23 @@
-from numpy import linalg, zeros, ones, hstack, asarray, vstack, array, mean, std
 import itertools
-import matplotlib.pyplot as plt
-from datetime import datetime
-import pandas as pd
-import numpy as np
-import scipy
-import matplotlib.dates as mdates
-from sklearn.metrics import mean_squared_error
-from math import sqrt
-import warnings
 import time
+import warnings
+from datetime import datetime
+from math import sqrt
+
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import scipy
+from numpy import array, asarray, hstack, linalg, mean, ones, std, vstack, zeros
+from sklearn.metrics import mean_squared_error
+
 warnings.filterwarnings("ignore")
 
-def find_and_break_days_or_hours(df, filter_bool, min_count_per_day = 8, frequency = 'days', print_info = False):
+
+def find_and_break_days_or_hours(
+    df, filter_bool, min_count_per_day=8, frequency="days", print_info=False
+):
     index_list = []
     day_hour_list = []
     prev = 0
@@ -21,12 +26,12 @@ def find_and_break_days_or_hours(df, filter_bool, min_count_per_day = 8, frequen
             print(type(j))
             print(j)
             print(df.loc[j])
-        if frequency == 'days':
-            curr = int(datetime.strptime(j, '%m/%d/%Y %H:%M:%S %p').strftime('%d'))
-            frq = datetime.strptime(j, '%m/%d/%Y %H:%M:%S %p').strftime('%m/%d/%Y')
-        elif frequency == 'hours':
-            curr = int(datetime.strptime(j, '%m/%d/%Y %H:%M:%S %p').strftime('%H'))
-            frq = datetime.strptime(j, '%m/%d/%Y %H:%M:%S %p').strftime('%m/%d/%Y %H')
+        if frequency == "days":
+            curr = int(datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%d"))
+            frq = datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%m/%d/%Y")
+        elif frequency == "hours":
+            curr = int(datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%H"))
+            frq = datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%m/%d/%Y %H")
         if curr != prev:
             index_list.append(index)
             day_hour_list.append(frq)
@@ -36,14 +41,13 @@ def find_and_break_days_or_hours(df, filter_bool, min_count_per_day = 8, frequen
     cut_results = []
     # Break df into days
     for k in range(len(index_list)):
-        if k == (len(index_list)-1):
+        if k == (len(index_list) - 1):
             # append last day
-            cut_results.append(df[index_list[k]:-1])
+            cut_results.append(df[index_list[k] : -1])
         else:
-            cut_results.append(df[index_list[k]:index_list[k+1]])
+            cut_results.append(df[index_list[k] : index_list[k + 1]])
 
     cut_results[-1] = pd.concat([cut_results[-1], df.iloc[[-1]]])
-
 
     if filter_bool:
         # NUMBER OF POINTS PER DAY MUST BE AT CERTAIN THRESHOLD
@@ -52,7 +56,7 @@ def find_and_break_days_or_hours(df, filter_bool, min_count_per_day = 8, frequen
         checked_day_hour_list = []
         dropped_days = []
         for i in range(len(cut_results)):
-            #TODO: also check standard deviation for flatlining
+            # TODO: also check standard deviation for flatlining
             if len(cut_results[i]) > min_count_per_day:
                 checked_cut_results.append(cut_results[i])
                 checked_index_list.append(index_list[i])
@@ -73,20 +77,23 @@ def find_and_break_days_or_hours(df, filter_bool, min_count_per_day = 8, frequen
 
     return index_list, day_hour_list, cut_results, df
 
+
 def get_weighted_middle_of_day_and_calculate_float_since_noon(cut_results, Y_tag):
     middles = []
     middles_dates = []
     cur_diff_integral = 999999
     for i in range(len(cut_results)):
         day_diff = array(cut_results[i][Y_tag].tolist())
-        day_start = int(datetime.strptime(cut_results[i].index[0], '%m/%d/%Y %H:%M:%S %p').strftime('%H'))
-        for l in range(1,len(day_diff)-1):
+        day_start = int(
+            datetime.strptime(cut_results[i].index[0], "%m/%d/%Y %H:%M:%S %p").strftime("%H")
+        )
+        for l in range(1, len(day_diff) - 1):
             left_data = day_diff[:l]
             right_data = day_diff[l:]
             left_integral = scipy.integrate.simps(left_data)
             right_integral = scipy.integrate.simps(right_data)
 
-            if (abs(left_integral - right_integral) < cur_diff_integral):
+            if abs(left_integral - right_integral) < cur_diff_integral:
                 archived_index = l
                 archived_index_date = cut_results[i].index[l]
                 cur_diff_integral = abs(left_integral - right_integral)
@@ -100,8 +107,14 @@ def get_weighted_middle_of_day_and_calculate_float_since_noon(cut_results, Y_tag
     # For each middle, calculate number of hours, as float, since noon
     hours_kpi = []
     for i in middles_dates:
-        noon = datetime.strptime((str(datetime.strptime(i, '%m/%d/%Y %H:%M:%S %p').strftime('%m/%d/%Y')) + ' 12:00:00 PM'), '%m/%d/%Y %H:%M:%S %p')
-        cur = datetime.strptime(i, '%m/%d/%Y %I:%M:%S %p')
+        noon = datetime.strptime(
+            (
+                str(datetime.strptime(i, "%m/%d/%Y %H:%M:%S %p").strftime("%m/%d/%Y"))
+                + " 12:00:00 PM"
+            ),
+            "%m/%d/%Y %H:%M:%S %p",
+        )
+        cur = datetime.strptime(i, "%m/%d/%Y %I:%M:%S %p")
         td = cur - noon
         float_hours = td.total_seconds() / 3600
 
