@@ -23,7 +23,8 @@ PARAMETERS
             iv. Global Horizontal Irradiance (GHI) - used for day classification
             v. PVLib"s simulated clear sky GHI - used for day classification
                 a. Check PVPolyfit.preprocessing"s add_ghi_to_df for an example of this
-                b. Or, go directly to the documentation: https://pvlib-python.readthedocs.io/en/stable/generated/pvlib.location.Location.get_clearsky.html
+                b. Or, go directly to the documentation:
+                    https://pvlib-python.readthedocs.io/en/stable/generated/pvlib.location.Location.get_clearsky.html
     Y_tag: str
         column name of output
     xs: list of str
@@ -44,7 +45,8 @@ PARAMETERS
         type of regression kernel, 3 are currently available
             0: polynomial
                 paraboiloidal polynomial
-                i.e. degree 2 with 2 covariates (dynamic equation): Y(α , X) = α_0 + α_1 X_1 + α_2 X_2 + α_3 X_1 X_2 + α_4 X_1^2 + α_5 X_2^2
+                i.e. degree 2 with 2 covariates (dynamic equation):
+                    Y(α , X) = α_0 + α_1 X_1 + α_2 X_2 + α_3 X_1 X_2 + α_4 X_1^2 + α_5 X_2^2
             1: polynomial with included log(POA) parameter
                 *requires xs[0] be POA column
                 paraboiloidal polynomial with added log(POA) term
@@ -105,7 +107,7 @@ min_count_per_day = 8
 
 
 """# 4. Call function"""
-modelled_P, days_rmses = pvpolyfit(
+modelled_P, _, days_rmses, _, _, _ = pvpolyfit(
     train_df,
     test_df,
     Y_tag,
