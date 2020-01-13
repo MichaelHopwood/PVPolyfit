@@ -3,7 +3,6 @@ import itertools
 import math
 import warnings
 from datetime import datetime
-from math import sqrt
 import warnings
 
 # Third Party

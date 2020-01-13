@@ -7,6 +7,7 @@ from math import sqrt
 
 # Third party
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import warnings
@@ -246,7 +247,7 @@ def heat_plot(df, N):
     plt.show()
 
 class PVPolyfit:
-    '''
+    """
     .______   ____    ____ .______     ______    __      ____    ____  _______  __  .___________.
     |   _  \  \   \  /   / |   _  \   /  __  \  |  |     \   \  /   / |   ____||  | |           |
     |  |_)  |  \   \/   /  |  |_)  | |  |  |  | |  |      \   \/   /  |  |__   |  | `---|  |----`

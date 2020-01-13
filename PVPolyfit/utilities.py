@@ -5,7 +5,6 @@ import warnings
 # Third party
 
 import pandas as pd
-import numpy as np
 import scipy
 
 warnings.filterwarnings("ignore")

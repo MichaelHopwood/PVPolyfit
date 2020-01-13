@@ -1,7 +1,6 @@
 from PVPolyfit import kernel
-from PVPolyfit import utilities
 
-from numpy import linalg, zeros, ones, hstack, asarray, vstack, array, mean, std, square, absolute
+from numpy import array
 import pandas as pd
 from sklearn.cluster import KMeans
 from datetime import datetime
@@ -39,13 +38,13 @@ def classify_weather_day_MHopwood(cut_results, Y_tag, xs, kmeans_num_clusters=4)
     return classification
 
 def cluster_ordered_pairs_and_return_df_of_days_in_cluster(cut_results, test_cut_results, ordered_pair_list, test_ordered_pair_list, kmeans_num_clusters = 4, print_info = False):
-    ''' KNN Clustering Algorithm - to find the same types of days'''
+    """ KNN Clustering Algorithm - to find the same types of days"""
 
 
     kmeans = KMeans(n_clusters = kmeans_num_clusters)
     kmeans.fit(array(ordered_pair_list + test_ordered_pair_list))
 
-    centroids = kmeans.cluster_centers_
+    kmeans.cluster_centers_
     km_labels = kmeans.labels_
     #print('labels, centroids', km_labels, centroids)
 
@@ -59,8 +58,8 @@ def cluster_ordered_pairs_and_return_df_of_days_in_cluster(cut_results, test_cut
     for test_cut_result, test_km_label in zip(test_cut_results, test_km_labels):
         test_cut_result["model_num"] = test_km_label
 
-    train_array_km_labels = array(train_km_labels)
-    test_array_km_labels = array(test_km_labels)
+    array(train_km_labels)
+    array(test_km_labels)
 
     #for i in range(kmeans_num_clusters):
     #    print("[train]: cluster num ", i, " has ", len(train_array_km_labels[train_array_km_labels == i]))

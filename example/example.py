@@ -77,23 +77,23 @@ RETURNS
         RMSE for each day
 """
 
-'''
+"""
 #
 ## Use PVPolyfit in 5 simple steps
 #
 
    # 0. make sure you have installed PVPolyfit, using `pip install pvpolyfit`
-'''
+"""
 
-'''# 1. Import necessary packages'''
+"""# 1. Import necessary packages"""
 from PVPolyfit.core import pvpolyfit
 import pandas as pd
 
-'''# 2. Import data'''
+"""# 2. Import data"""
 train_df = pd.read_csv('example_data//train_df.csv', index_col = 'datetime')
 test_df = pd.read_csv('example_data//test_df.csv', index_col = 'datetime')
 
-'''# 3. Define input variables'''
+"""# 3. Define input variables"""
 Y_tag = 'Pmpp'
 xs = ['irradiance', 'ambient_temp'] # Try throwing in 'wind_speed', does it effect the results?
 I_tag = 'Impp'
