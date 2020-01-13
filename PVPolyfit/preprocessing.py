@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 from pvlib.location import Location
 
-warnings.filterwarnings("ignore")
 
+warnings.filterwarnings("ignore")
 
 def classify_weather_day_GM_Tina(df, clearsky_ghi_tag, meas_ghi_tag):
     X_csm = df[clearsky_ghi_tag].values
@@ -20,19 +20,19 @@ def classify_weather_day_GM_Tina(df, clearsky_ghi_tag, meas_ghi_tag):
     k = abs(X_meas - X_csm) / X_csm
     k = np.array(k)
 
-    # TODO:
+    #TODO:
     # 1. CHANGE FREQUENCY TO 1 min/10 min
     # 2. For every Δt (10 minutes/1 hour), divide it into 3 splits
     # 3. For each split, iterate
 
     # Moving average
     # MA is calculated for a larger interval, i assume
-    Nm = 3  # 5
+    Nm = 3 # 5
     MA = []
     for i in range(len(k)):
         sumk = 0
         if i < Nm:
-            for j in range(i + 1):
+            for j in range(i+1):
                 sumk += k[j]
         else:
             for _iter in range(Nm):
@@ -42,7 +42,7 @@ def classify_weather_day_GM_Tina(df, clearsky_ghi_tag, meas_ghi_tag):
 
     MA = np.array(MA) * (1 / Nm)
 
-    # print("CHECK: make sure lengths are equal (k and MA): ", len(k), len(MA))
+    #print("CHECK: make sure lengths are equal (k and MA): ", len(k), len(MA))
 
     # Moving function
     MF = []
@@ -63,14 +63,14 @@ def classify_weather_day_GM_Tina(df, clearsky_ghi_tag, meas_ghi_tag):
     classification = []
     # input k and MF
     for i in range(len(k)):
-        if MF[i] > 0.05:
+        if(MF[i] > 0.05):
             # Variable
             classification.append(1)
         # k[i] = 0.4
-        elif k[i] > 0.7:
+        elif (k[i] > 0.7):
             # Cloudy
             classification.append(2)
-        elif k[i] > 0.2 or MF[i] > 0.02:
+        elif (k[i] > 0.2 or MF[i] > 0.02):
             # Slightly Cloudy
             classification.append(3)
         else:
@@ -83,7 +83,7 @@ def classify_weather_day_GM_Tina(df, clearsky_ghi_tag, meas_ghi_tag):
 def data_preprocessing(df, xs, Y_tag, I_tag, cs_tag, Y_high_filter, print_info, include_preprocess):
 
     # data processing
-    df.dropna(inplace=True)
+    df.dropna(inplace = True)
 
     # drop where ghi_clearsky is equal to 0 because we will be dividing by that later
 
@@ -111,22 +111,18 @@ def data_preprocessing(df, xs, Y_tag, I_tag, cs_tag, Y_high_filter, print_info, 
         df = df[~df["outlier_bool"]]
         df.drop(columns=["outlier_bool"])
 
+
         if print_info:
             new_num_rows = len(df.index)
-            print(
-                "Dropped {} of {} rows with I/Irr filter.".format(
-                    (old_num_rows - new_num_rows), old_num_rows
-                )
-            )
+            print("Dropped {} of {} rows with I/Irr filter.".format((old_num_rows - new_num_rows), old_num_rows))
 
     return df
 
-
-def add_ghi_to_df(df, start, end, freq, dropped_days, xs, ghi_tag, cs_tag, type_=None):
-    if type_ == "NIST":
+def add_ghi_to_df(df, start, end, freq, dropped_days, xs, ghi_tag, cs_tag, type_ = None):
+    if type_ == 'NIST':
         # multiply GHI by 10^3 because it is in milli
         if len(ghi_tag) != 0:
-            df[ghi_tag] = df[ghi_tag].apply(lambda x: x * 10 ** 2)
+            df[ghi_tag] = df[ghi_tag].apply(lambda x: x * 10**2)
 
     # TODO: Classify and group days/or/hours (check regression_notes.txt on Desktop)
     if type_ in {"8157UCF", "PVLifetime", "VCAD"}:
@@ -141,19 +137,18 @@ def add_ghi_to_df(df, start, end, freq, dropped_days, xs, ghi_tag, cs_tag, type_
         freq=freq + "in",
         tz=cocoa.tz,
     )
+
     cs = cocoa.get_clearsky(times)
 
     df = df[df[xs[0]] > 20]
-    cs = cs[cs["ghi"] > 20]
+    cs = cs[cs['ghi'] > 20]
     cs = cs.iloc[1:]
     cs_ghi = pd.DataFrame()
 
     if len(cs_tag) != 0:
-        cs_ghi[cs_tag] = cs["ghi"]
+        cs_ghi[cs_tag] = cs['ghi']
 
-    cs_ghi.index = pd.to_datetime(cs.index, format="%m/%d/%Y %I:%M:%S %p").strftime(
-        "%m/%d/%Y %I:%M:%S %p"
-    )
+    cs_ghi.index = pd.to_datetime(cs.index, format = '%m/%d/%Y %I:%M:%S %p').strftime('%m/%d/%Y %I:%M:%S %p')
 
     df = pd.merge(df, cs_ghi, how="inner", left_index=True, right_index=True)
 

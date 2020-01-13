@@ -3,18 +3,21 @@ import itertools
 import math
 import warnings
 from datetime import datetime
+from math import sqrt
+import warnings
 
 # Third Party
 import numpy as np
+from sklearn.metrics import mean_squared_error
 
 # Standard
 from PVPolyfit import utilities
-from sklearn.metrics import mean_squared_error
+
 
 warnings.filterwarnings("ignore")
 
-
 class Model:
+
     def __init__(self, inputs, Y, degree, kernel_type):
 
         self.inputs = inputs
@@ -45,6 +48,7 @@ class Model:
             for i in range(num_inputs + 1):
                 # create np.array of np.zeros
                 row = np.zeros(num_inputs + 1, dtype=int)
+
                 # add 1 to diagonal index
                 row[i] = 1
                 iden_matrix.append(row)
@@ -62,14 +66,13 @@ class Model:
             # Raise data to specified degree pattern and stack
             A = []
             for power in poly_powers:
-                product = (xs ** power).prod(1)
+                product = (xs**power).prod(1)
                 A.append(product.reshape(product.shape + (1,)))
             A = np.hstack(np.array(A))
 
             # get solution with smallest error via least-squares
             # returns coefficients of polynomial
             a_hat = np.linalg.lstsq(A, self.Y, rcond=-1)[0]
-
             # save resolved coefficients
             self.a_hat = a_hat
             # save polynomial powers
@@ -106,15 +109,16 @@ class Model:
             for combination in combinations:
                 sum_arr = np.zeros(num_inputs + 1 + 1, dtype=int)
                 sum_arr += sum((np.array(j) for j in combination))
+
                 poly_powers.append(sum_arr)
 
-            # print(poly_powers)
-            # print(len(poly_powers))
+            #print(poly_powers)
+            #print(len(poly_powers))
 
             # Raise data to specified degree pattern and stack
             A = []
             for power in poly_powers:
-                product = (xs ** power).prod(1)
+                product = (xs**power).prod(1)
                 A.append(product.reshape(product.shape + (1,)))
             A = np.hstack(np.array(A))
 
@@ -122,10 +126,12 @@ class Model:
             # returns coefficients of polynomial
             a_hat = np.linalg.lstsq(A, self.Y, rcond=-1)[0]
 
+
             # save resolved coefficients
             self.a_hat = a_hat
             # save polynomial powers
             self.powers = poly_powers
+
 
         if self.kernel_type == 2:
             # Diode Inspired
@@ -158,7 +164,7 @@ class Model:
         """
 
         if self.kernel_type == 0:
-            # polynomial
+            #polynomial
             fit = 0
             for _iter, power in zip(self.a_hat, self.powers):
                 for index in range(1, len(power)):
@@ -166,7 +172,7 @@ class Model:
                 fit += _iter
 
         if self.kernel_type == 1:
-            # polynomial with included log(POA) parameter
+            #polynomial with included log(POA) parameter
             # requires POA be first input in xs
 
             temps.append(np.log(temps[0]))
@@ -183,15 +189,16 @@ class Model:
 
             x1_i, x2_i = temps
             b1, b2, b3, b4, b5 = self.a_hat
-            fit = b1 + b2 * x1_i + b3 * x2_i + b4 * np.log(x1_i) + b5 * np.log(x2_i)
+            fit = b1 + b2*x1_i + b3*x2_i + b4*np.log(x1_i) + b5*np.log(x2_i)
+
 
         return fit
 
     def info(self):
         return self.a_hat, self.powers
 
-
 class EvaluateModel:
+
     def __init__(self, measured, modelled):
 
         self.measured = measured

@@ -1,25 +1,26 @@
 # Standard
 import copy
+import time
 import warnings
 from datetime import datetime
 from math import sqrt
 
 # Third party
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
-from PVPolyfit import clustering as cluster
+import warnings
+from sklearn.metrics import mean_squared_error
 
 # Source
+from PVPolyfit import clustering as cluster
 from PVPolyfit import kernel
 from PVPolyfit import preprocessing as preprocess
 from PVPolyfit import utilities
-from sklearn.metrics import mean_squared_error
+
 
 warnings.filterwarnings("ignore")
 sns.set(style="whitegrid")
-
 
 def pvpolyfit(
     train_df,
@@ -50,11 +51,12 @@ def pvpolyfit(
 
     pvpoly.prepare(Y_high_filter, min_count_per_day, include_preprocess)
 
+
     rmse_list = []
     std_rmse_list = []
     pvpoly_objects = []
     combined_labels = []
-    for i in range(1, highest_num_clusters + 1):
+    for i in range(1, highest_num_clusters+1):
         pvpoly_iter = copy.deepcopy(pvpoly)
         # Seperate into multiple try/excepts to localize problem
         try:
@@ -157,14 +159,12 @@ def _pvpolyfit_inputCluster(
     if not avg_rmse:
         raise Exception("No Output was produced. Go here for more information: ")
 
-    days_rmses, model_output, meases, df = pvpoly.plot(
-        graph_type=graph_type, print_info=print_info, plot_graph=plot_graph
-    )
+    days_rmses, model_output, meases, df = pvpoly.plot(graph_type = graph_type, print_info = print_info, plot_graph = plot_graph)
 
     return model_output, meases, days_rmses, num_clusters, df
 
 
-def break_days(df, filter_bool, min_count_per_day=8, frequency="days", print_info=False):
+def break_days(df, filter_bool, min_count_per_day = 8, frequency = 'days', print_info = False):
     index_list = []
     day_hour_list = []
     prev = 0
@@ -187,16 +187,15 @@ def break_days(df, filter_bool, min_count_per_day=8, frequency="days", print_inf
 
     # Break df into days
     for k in range(len(index_list)):
-        if k == (len(index_list) - 1):
+        if k == (len(index_list)-1):
             # append lasfinal_df.iloc[[iindex]].indext day
-            cut_results.append(df[index_list[k] : -1])
+            cut_results.append(df[index_list[k]:-1])
         else:
-            cut_results.append(df[index_list[k] : index_list[k + 1]])
+            cut_results.append(df[index_list[k]:index_list[k+1]])
 
     cut_results[-1] = pd.concat([cut_results[-1], df.iloc[[-1]]])
 
     return index_list, day_hour_list, cut_results, df
-
 
 def heat_plot(df, N):
     # Nth column of DF will be plotted
@@ -212,32 +211,30 @@ def heat_plot(df, N):
     for i in range(len(cut_df)):
         try:
             comb_df[str(i)] = cut_df[i][cut_df[i].columns[N]].tolist()
-            dates.append(
-                datetime.strptime(cut_df[i].index[0], "%m/%d/%Y %I:%M:%S %p").strftime("%m/%d/%Y")
-            )
+            dates.append(datetime.strptime(cut_df[i].index[0], '%m/%d/%Y %I:%M:%S %p').strftime('%m/%d/%Y'))
         except ValueError:
             continue
 
     lizt = comb_df.values
-    fig, ax = plt.subplots(nrows=1, figsize=(10, 8))
-    foo = ax.imshow(lizt, cmap="hot", interpolation="none", aspect="auto", vmin=0)
+    fig, ax = plt.subplots(nrows=1, figsize=(10,8))
+    foo = ax.imshow(lizt, cmap='hot', interpolation='none', aspect='auto', vmin=0)
 
-    if df.columns[N] == "error":
-        ax.set_title("PVPolyfit Error Heat Plot")
+    if df.columns[N] == 'error':
+        ax.set_title('PVPolyfit Error Heat Plot')
 
-    if df.columns[N] == "rmse":
-        ax.set_title("PVPolyfit RMSE Heat Plot")
+    if df.columns[N] == 'rmse':
+        ax.set_title('PVPolyfit RMSE Heat Plot')
 
-    if df.columns[N] == "model_output":
-        ax.set_title("PVPolyfit Model Output Heat Plot")
+    if df.columns[N] == 'model_output':
+        ax.set_title('PVPolyfit Model Output Heat Plot')
 
-    plt.colorbar(foo, ax=ax, label="W")
-    ax.set_xlabel("Day number")
+    plt.colorbar(foo, ax=ax, label='W')
+    ax.set_xlabel('Day number')
     ax.set_xticks(np.arange(len(dates)))
     ax.set_xticklabels(dates)
 
     ax.set_yticks([])
-    ax.set_ylabel("              Time of day                 ")
+    ax.set_ylabel('              Time of day                 ')
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
     ax.set_xlim(*xlim)
@@ -248,9 +245,8 @@ def heat_plot(df, N):
 
     plt.show()
 
-
 class PVPolyfit:
-    """
+    '''
     .______   ____    ____ .______     ______    __      ____    ____  _______  __  .___________.
     |   _  \  \   \  /   / |   _  \   /  __  \  |  |     \   \  /   / |   ____||  | |           |
     |  |_)  |  \   \/   /  |  |_)  | |  |  |  | |  |      \   \/   /  |  |__   |  | `---|  |----`
@@ -300,6 +296,7 @@ class PVPolyfit:
         self.cs_tag = cs_tag
         self.print_info = print_info
 
+
         self.num_clusters = 0
         self.num_iterations = 0
         self.degrees = []
@@ -311,6 +308,7 @@ class PVPolyfit:
         self.combined_test_cut_results = []
         self.test_km_labels = []
         self.avg_rmse = 0
+
 
         # all_best_dfs[Degree][Day][Columns: 'Y', 'mins', 'maxs']
         self.all_best_dfs = []
@@ -345,48 +343,17 @@ class PVPolyfit:
                     self.train_df, self.cs_tag, self.ghi_tag
                 )
                 self.train_df["day_type"] = classification
-
         # cuts train_df into daily DF's
         # also returns a filtered train_df which cuts out a day if its length is too small
-        (
-            index_list,
-            day_hour_list,
-            self.cut_results,
-            self.train_df,
-        ) = utilities.find_and_break_days_or_hours(
-            self.train_df,
-            True,
-            min_count_per_day=min_count_per_day,
-            frequency="days",
-            print_info=self.print_info,
-        )
+        index_list, day_hour_list, self.cut_results, self.train_df = utilities.find_and_break_days_or_hours(self.train_df, True, min_count_per_day = min_count_per_day, frequency = 'days', print_info = self.print_info)
 
-        (
-            middles_dates,
-            hours_kpi,
-        ) = utilities.get_weighted_middle_of_day_and_calculate_float_since_noon(
-            self.cut_results, self.Y_tag
-        )
-        # For each day, compile frequencies
-        # For each day, output the # times each class is triggered
+        middles_dates, hours_kpi = utilities.get_weighted_middle_of_day_and_calculate_float_since_noon(self.cut_results, self.Y_tag)
+        ### For each day, compile frequencies
+        ### For each day, output the # times each class is triggered
 
-        (
-            self.ordered_pair_list,
-            freq_df,
-        ) = cluster.create_conglomerated_vectors_for_clustering_algorithm(
-            self.cut_results, hours_kpi, day_hour_list, self.Y_tag, self.xs
-        )
+        self.ordered_pair_list, freq_df = cluster.create_conglomerated_vectors_for_clustering_algorithm(self.cut_results, hours_kpi, day_hour_list, self.Y_tag, self.xs)
 
-        self.test_df = preprocess.data_preprocessing(
-            self.test_df,
-            self.xs,
-            self.Y_tag,
-            self.I_tag,
-            self.cs_tag,
-            Y_high_filter,
-            self.print_info,
-            include_preprocess,
-        )
+        self.test_df = preprocess.data_preprocessing(self.test_df, self.xs, self.Y_tag, self.I_tag, self.cs_tag, Y_high_filter, self.print_info, include_preprocess)
 
         if len(self.cs_tag) != 0 or len(self.ghi_tag) != 0:
             test_classification, _, _ = preprocess.classify_weather_day_GM_Tina(
@@ -459,30 +426,11 @@ class PVPolyfit:
             # 1. Run the code an n number of times
             for _ in range(self.num_iterations):
                 # clusters and adds 'model_num' column to cut_results & test_cut_results
-                (
-                    train_kmeans_dfs,
-                    test_kmeans_dfs,
-                    self.test_km_labels,
-                    self.cut_results,
-                    self.test_cut_results,
-                    train_model_day_count,
-                    test_model_day_count,
-                ) = cluster.cluster_ordered_pairs_and_return_df_of_days_in_cluster(
-                    self.cut_results,
-                    self.test_cut_results,
-                    self.ordered_pair_list,
-                    self.test_ordered_pair_list,
-                    kmeans_num_clusters=self.num_clusters,
-                    print_info=self.print_info,
-                )
+                train_kmeans_dfs, test_kmeans_dfs, self.test_km_labels, self.cut_results, self.test_cut_results, train_model_day_count, test_model_day_count = cluster.cluster_ordered_pairs_and_return_df_of_days_in_cluster(self.cut_results, self.test_cut_results, self.ordered_pair_list, self.test_ordered_pair_list, kmeans_num_clusters = self.num_clusters, print_info = self.print_info)
 
-                saved_models = cluster.save_model_for_each_cluster(
-                    train_kmeans_dfs, degree, self.Y_tag, self.xs, self.kernel_type
-                )
+                saved_models = cluster.save_model_for_each_cluster(train_kmeans_dfs, degree, self.Y_tag, self.xs, self.kernel_type)
 
-                self.kmeans_Y_lists = kernel.process_test_data_through_models(
-                    test_kmeans_dfs, saved_models, self.test_km_labels, self.xs
-                )
+                self.kmeans_Y_lists = kernel.process_test_data_through_models(test_kmeans_dfs, saved_models, self.test_km_labels, self.xs)
 
                 # 2. For each iteration, save the modelled P and colors (based on model used)
                 combined_P_list.append(self.kmeans_Y_lists)
@@ -508,23 +456,22 @@ class PVPolyfit:
                 mins.append(_min)
                 maxs.append(_max)
 
+
             best_index = np.argmin(P_se_list)
             best_model = combined_P_list[best_index]
             best_df = pd.DataFrame()
 
-            best_df["Y"] = best_model
-            best_df["mins"] = mins
-            best_df["maxs"] = maxs
+            best_df['Y'] = best_model
+            best_df['mins'] = mins
+            best_df['maxs'] = maxs
 
             best_df.index = self.test_df.index
-            _, _, dfg, _ = utilities.find_and_break_days_or_hours(
-                best_df, False, min_count_per_day=0, frequency="days", print_info=self.print_info
-            )
+            _,_,dfg,_ = utilities.find_and_break_days_or_hours(best_df, False, min_count_per_day = 0, frequency = 'days', print_info = self.print_info)
             self.all_best_dfs.append(dfg)
             self.model_day_counts.append(combined_day_counts[best_index])
             return combined_test_km_labels[best_index]
 
-    def evaluate(self, print_info=True):
+    def evaluate(self, print_info = True):
         """
             Determine rmse for each day for each degree
             and return index of best model for each day
@@ -609,7 +556,7 @@ class PVPolyfit:
 
                 ind = self.ultimate_days[i][1]
 
-                Y_output_daily = self.all_best_dfs[ind][i]["Y"].tolist()
+                Y_output_daily = self.all_best_dfs[ind][i]['Y'].tolist()
                 model_outputs.append(Y_output_daily)
                 day_index = self.all_best_dfs[ind][i].index.tolist()
                 day_maxes = self.all_best_dfs[ind][i]["maxs"].tolist()
@@ -619,32 +566,28 @@ class PVPolyfit:
                 dt_index = pd.to_datetime(day_index)
 
                 if plot_graph:
-                    plt.plot(dt_index, day_meas, "k")
+                    plt.plot(dt_index, day_meas, 'k')
                     plt.plot(dt_index, Y_output_daily, color)
-                    plt.fill_between(dt_index, day_maxes, day_mins, facecolor=color)
+                    plt.fill_between(dt_index, day_maxes, day_mins, facecolor = color)
                     plt.xlabel("time")
                     plt.ylabel("Watts")
                     plt.xticks(rotation=60)
-                    plt.title("Modelled Multiple Day Types (by color)")
+                    plt.title('Modelled Multiple Day Types (by color)')
 
                 uncer = np.array(Y_output_daily) - day_meas  # /(day_meas))
                 calc_rmse = sqrt(mean_squared_error(day_meas, np.array(Y_output_daily)))
+    
                 iter_rmses.append(calc_rmse)
                 df_index.append(dt_index)
                 uncer_vals.append(uncer)
                 df_meases.append(day_meas)
 
                 if print_info:
-                    print(
-                        "[{}]:".format(
-                            datetime.strptime(day_index[0], "%m/%d/%Y %H:%M:%S %p").strftime(
-                                "%Y-%m-%d"
-                            )
-                        )
-                    )
+                    print("[{}]:".format(datetime.strptime(day_index[0], '%m/%d/%Y %H:%M:%S %p').strftime('%Y-%m-%d')))
                     print("\trmse: {:.4f}, error: {:.4f}".format(calc_rmse, uncer.mean()))
             if plot_graph:
                 plt.show()
+
 
             plt.close()
 
@@ -652,9 +595,9 @@ class PVPolyfit:
             df_indices = [item for sublist in df_index for item in sublist]
 
             df = pd.DataFrame(index=df_indices)
-            df["error"] = uncer_values
-            df["model_output"] = [item for sublist in model_outputs for item in sublist]
-            df["meas"] = [item for sublist in df_meases for item in sublist]
+            df['error'] = uncer_values
+            df['model_output'] = [item for sublist in model_outputs for item in sublist]
+            df['meas'] = [item for sublist in df_meases for item in sublist]
 
         return iter_rmses, model_outputs, meases, df
 

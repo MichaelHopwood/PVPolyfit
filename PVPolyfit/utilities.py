@@ -3,15 +3,14 @@ import datetime
 import warnings
 
 # Third party
+
 import pandas as pd
+import numpy as np
 import scipy
 
 warnings.filterwarnings("ignore")
 
-
-def find_and_break_days_or_hours(
-    df, filter_bool, min_count_per_day=8, frequency="days", print_info=False
-):
+def find_and_break_days_or_hours(df, filter_bool, min_count_per_day = 8, frequency = 'days', print_info = False):
     index_list = []
     day_hour_list = []
     prev = 0
@@ -26,6 +25,7 @@ def find_and_break_days_or_hours(
         elif frequency == "hours":
             curr = int(datetime.datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%H"))
             frq = datetime.datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%m/%d/%Y %H")
+
         if curr != prev:
             index_list.append(index)
             day_hour_list.append(frq)
@@ -34,13 +34,14 @@ def find_and_break_days_or_hours(
     cut_results = []
     # Break df into days
     for k in range(len(index_list)):
-        if k == (len(index_list) - 1):
+        if k == (len(index_list)-1):
             # append last day
-            cut_results.append(df[index_list[k] : -1])
+            cut_results.append(df[index_list[k]:-1])
         else:
-            cut_results.append(df[index_list[k] : index_list[k + 1]])
+            cut_results.append(df[index_list[k]:index_list[k+1]])
 
     cut_results[-1] = pd.concat([cut_results[-1], df.iloc[[-1]]])
+
 
     if filter_bool:
         # NUMBER OF POINTS PER DAY MUST BE AT CERTAIN THRESHOLD
@@ -49,7 +50,7 @@ def find_and_break_days_or_hours(
         checked_day_hour_list = []
         dropped_days = []
         for i in range(len(cut_results)):
-            # TODO: also check standard deviation for flatlining
+            #TODO: also check standard deviation for flatlining
             if len(cut_results[i]) > min_count_per_day:
                 checked_cut_results.append(cut_results[i])
                 checked_index_list.append(index_list[i])
@@ -70,7 +71,6 @@ def find_and_break_days_or_hours(
 
     return index_list, day_hour_list, cut_results, df
 
-
 def get_weighted_middle_of_day_and_calculate_float_since_noon(cut_results, Y_tag):
     middles = []
     middles_dates = []
@@ -83,7 +83,7 @@ def get_weighted_middle_of_day_and_calculate_float_since_noon(cut_results, Y_tag
             left_integral = scipy.integrate.simps(left_data)
             right_integral = scipy.integrate.simps(right_data)
 
-            if abs(left_integral - right_integral) < cur_diff_integral:
+            if (abs(left_integral - right_integral) < cur_diff_integral):
                 archived_index = l
                 archived_index_date = cut_results[i].index[l]
                 cur_diff_integral = abs(left_integral - right_integral)
