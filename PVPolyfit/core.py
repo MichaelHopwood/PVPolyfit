@@ -91,8 +91,8 @@ def pvpolyfit(
     clusters_used = range(1, highest_num_clusters + 1)[min_idx]
 
     if print_info:
-        print(f"Min idx: {min_idx}")
-        print(f"{clusters_used} cluster(s) were used.")
+        print("Min idx: {}".format(min_idx))
+        print("{} cluster(s) were used.".format(clusters_used))
 
     days_rmses, model_output, meases, df = pvpoly_objects[min_idx].plot(
         graph_type=graph_type, print_info=print_info, plot_graph=plot_graph
@@ -170,7 +170,7 @@ def break_days(df, filter_bool, min_count_per_day=8, frequency="days", print_inf
     prev = 0
     for index, j in enumerate(df.index):
         if not isinstance(j, str):
-            print(f"Index value {j} is of type {type(j)} with value {df.loc[j]}")
+            print("Index value {} is of type {} with value {}".format(j, type(j), df.loc[j]))
             j = j.strftime("%m/%d/%Y %H:%M:%S %p")
         if frequency == "days":
             curr = int(datetime.strptime(j, "%m/%d/%Y %H:%M:%S %p").strftime("%d"))

@@ -37,7 +37,7 @@ def classify_weather_day_MHopwood(cut_results, Y_tag, xs, kmeans_num_clusters=4)
 
     # flatten classifications
     classification = [item for sublist in classifications for item in sublist]
-    print(f"Classification: {classification}")
+    print("Classification: {}".format(classification))
 
     return classification
 
