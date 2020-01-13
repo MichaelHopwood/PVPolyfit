@@ -21,9 +21,10 @@ PARAMETERS
                     However, the model should converge to low coefficients if the parameter is "double-counted".
             iii. Current (I) [if not already provided] - used in filtering technique
             iv. Global Horizontal Irradiance (GHI) - used for day classification
-            v. PVLib's simulated clear sky GHI - used for day classification
-                a. Check PVPolyfit.preprocessing's add_ghi_to_df for an example of this
-                b. Or, go directly to the documentation: https://pvlib-python.readthedocs.io/en/stable/generated/pvlib.location.Location.get_clearsky.html
+            v. PVLib"s simulated clear sky GHI - used for day classification
+                a. Check PVPolyfit.preprocessing"s add_ghi_to_df for an example of this
+                b. Or, go directly to the documentation:
+                    https://pvlib-python.readthedocs.io/en/stable/generated/pvlib.location.Location.get_clearsky.html
     Y_tag: str
         column name of output
     xs: list of str
@@ -43,8 +44,9 @@ PARAMETERS
     kernel_type: int
         type of regression kernel, 3 are currently available
             0: polynomial
-                paraboiloidal polynomial 
-                i.e. degree 2 with 2 covariates (dynamic equation): Y(α , X) = α_0 + α_1 X_1 + α_2 X_2 + α_3 X_1 X_2 + α_4 X_1^2 + α_5 X_2^2
+                paraboiloidal polynomial
+                i.e. degree 2 with 2 covariates (dynamic equation):
+                    Y(α , X) = α_0 + α_1 X_1 + α_2 X_2 + α_3 X_1 X_2 + α_4 X_1^2 + α_5 X_2^2
             1: polynomial with included log(POA) parameter
                 *requires xs[0] be POA column
                 paraboiloidal polynomial with added log(POA) term
@@ -75,23 +77,23 @@ RETURNS
         RMSE for each day
 """
 
-'''
+"""
 #
 ## Use PVPolyfit in 5 simple steps
 #
 
    # 0. make sure you have installed PVPolyfit, using `pip install pvpolyfit`
-'''
+"""
 
-'''# 1. Import necessary packages'''
+"""# 1. Import necessary packages"""
 from PVPolyfit.core import pvpolyfit
 import pandas as pd
 
-'''# 2. Import data'''
+"""# 2. Import data"""
 train_df = pd.read_csv('example_data//train_df.csv', index_col = 'datetime')
 test_df = pd.read_csv('example_data//test_df.csv', index_col = 'datetime')
 
-'''# 3. Define input variables'''
+"""# 3. Define input variables"""
 Y_tag = 'Pmpp'
 xs = ['irradiance', 'ambient_temp'] # Try throwing in 'wind_speed', does it effect the results?
 I_tag = 'Impp'
@@ -104,12 +106,27 @@ Y_high_filter = 10000 # To be depricated: filter out Y values higher than Y_high
 min_count_per_day = 8
 
 
-'''# 4. Call function'''
-modelled_P, days_rmses = pvpolyfit(train_df, test_df, Y_tag, xs, I_tag, ghi_tag, cs_tag, 
-	      highest_num_clusters, highest_degree, kernel_type, Y_high_filter, min_count_per_day, 
-              plot_graph = True, graph_type = 'regression', print_info = False)
+"""# 4. Call function"""
+modelled_P, _, days_rmses, _, _, _ = pvpolyfit(
+    train_df,
+    test_df,
+    Y_tag,
+    xs,
+    I_tag,
+    ghi_tag,
+    cs_tag,
+    highest_num_clusters,
+    highest_degree,
+    kernel_type,
+    Y_high_filter,
+    min_count_per_day,
+    plot_graph=True,
+    graph_type="regression",
+    print_info=False,
+)
 
-'''# 5. Understanding the error - simple example'''
+
+"""# 5. Understanding the error - simple example"""
 # calculate average rmse
 avg_RMSE = sum(days_rmses) / len(days_rmses)
 
