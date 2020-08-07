@@ -1,5 +1,4 @@
-[![PyPI version](https://badge.fury.io/py/PVPolyfit.svg)](https://badge.fury.io/for/py/PVPolyfit)
-[![Downloads](https://pepy.tech/badge/pvpolyfit)](https://pepy.tech/project/pvpolyfit)
+[![PyPI version](https://badge.fury.io/py/PVPolyfit.svg)](https://badge.fury.io/for/py/PVPolyfit)[![Downloads](https://pepy.tech/badge/pvpolyfit)](https://pepy.tech/project/pvpolyfit)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 # PVPolyfit
 
 A one-lined function call for a high-resolution regression on PV Output
