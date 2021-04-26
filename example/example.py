@@ -107,7 +107,7 @@ min_count_per_day = 8
 
 
 """# 4. Call function"""
-modelled_P, _, days_rmses, _, _, _ = pvpolyfit(
+modelled_P, days_rmses= pvpolyfit(
     train_df,
     test_df,
     Y_tag,
