@@ -86,7 +86,10 @@ RETURNS
 """
 
 """# 1. Import necessary packages"""
-from PVPolyfit.core import pvpolyfit
+try:
+    from PVPolyfit.core import pvpolyfit
+except:
+    print("Please install PVPolyfit using `pip install pvpolyfit`. Thanks!")
 import pandas as pd
 
 """# 2. Import data"""
